@@ -1,0 +1,20 @@
+{
+    "name": "skyandfly/delivery",
+    "description": "delivery telegram bot",
+    "type": "project",
+    "authors": [
+        {
+            "name": "skyandfly"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+
+        }
+    },
+    "require": {
+        "vlucas/phpdotenv": "^5.6",
+        "guzzlehttp/guzzle": "^7.9",
+        "irazasyed/telegram-bot-sdk": "^3.15"
+    }
+}
