@@ -55,7 +55,7 @@ class TelegramBot
                 'photo' => InputFile::create($this->images[$firm]),
                 'caption' => $this->getMessageCaption($firm),
                 'reply_markup' => json_encode($this->createKeyboard(
-                    key: 'address',
+                    key: 'address|' . $firm,
                     data: $this->address[$firm],
                 ))
             ]);
@@ -76,7 +76,7 @@ class TelegramBot
             'inline_keyboard' => array_map(
                 fn($item) => [[
                     'text' => $suffix !== null ? $item . ' ' . $suffix : $item,
-                    'callback_data' => $key . '_' . $item
+                    'callback_data' => $key . '|' . $item
                 ]],
                 $data
             )

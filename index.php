@@ -53,14 +53,14 @@ try {
         $chatId = $callbackQuery->getMessage()->getChat()->getId();
         $data = $callbackQuery->getData();
 
-        if (str_starts_with($data, 'firm_')) {
-            $firm = substr($data, strlen('firm_'));
+        if (str_starts_with($data, 'firm|')) {
+            $firm = substr($data, strlen('firm|'));
             $apiDisk->createFolder($currentDate . '/' . $firm);
             $bot->actionSelectedFirm($firm, $chatId);
 
         }
-        if (str_starts_with($data, 'address_')) {
-            $address = substr($data, strlen('address_'));
+        if (str_starts_with($data, 'address|')) {
+            [, $firm, $address] = explode('|', $data, 3);
             $apiDisk->createFolder($currentDate . '/' . $firm . '/' . $address);
             $bot->actionSelectedAddress($chatId);
         }
