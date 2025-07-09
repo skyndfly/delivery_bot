@@ -1,0 +1,62 @@
+<?php
+
+namespace classes;
+
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+
+class ApiYandexDisk
+{
+    private const string CLIENT_ID = '877ebf719fdb473fb91ebf59c10dcb34';
+    private const string ACCESS_TOKEN = 'y0__xC9rdSSBhji7TggrZne4hN0SVH1fRYfV1j0NK1YzbqHMdK_mQ';
+    private const string BASE_FOLDER = 'delivery_bot';
+    private Client $client;
+
+    public function __construct()
+    {
+        $this->client = new Client([
+            'headers' => [
+                'Authorization' => 'OAuth ' . self::ACCESS_TOKEN,
+            ]
+        ]);
+        $this->createBaseFolder();
+    }
+
+
+    public function createFolder(string $folderName): true
+    {
+        try {
+            $this->client->request(
+                'PUT',
+                'https://cloud-api.yandex.net/v1/disk/resources?path=' . urlencode(self::BASE_FOLDER . '/' . $folderName)
+            );
+            return true;
+        }catch (ClientException $e){
+            $statusCode = $e->getResponse()->getStatusCode();
+            if ($statusCode == 409) {
+                return true;
+            }
+            throw $e;
+        }
+    }
+
+    private function createBaseFolder()
+    {
+        try {
+            $this->client->request(
+                'GET',
+                'https://cloud-api.yandex.net/v1/disk/resources?path=' . urlencode(self::BASE_FOLDER)
+            );
+        } catch (ClientException $e) {
+            $status = $e->getResponse()->getStatusCode();
+            if ($status == 404) {
+                $this->client->request(
+                    'PUT',
+                    'https://cloud-api.yandex.net/v1/disk/resources?path=' . urlencode(self::BASE_FOLDER)
+                );
+            } else {
+                throw $e;
+            }
+        }
+    }
+}
