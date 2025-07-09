@@ -21,6 +21,7 @@ try {
     $botToken = "8000230460:AAFU0ivU-a2PVr69iWUf5K3JLc7d791Xknw";
     $telegram = new Api($botToken);
 
+    $keys = require_once 'data/keys.php';
     $firms = require_once 'data/firms.php';
     $address = require_once 'data/address.php';
     $images = require_once 'data/images.php';
@@ -28,6 +29,7 @@ try {
 
     $bot = new TelegramBot(
         $telegram,
+        $keys,
         $firms,
         $address,
         $images,

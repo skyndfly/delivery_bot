@@ -1,29 +1,16 @@
 <?php
 return [
-    'Ozon' => './img/ozon.jpg',
-
-    'Wildberries' => './img/wild.jpg',
-
-    'СДЭК' => './img/sdek.jpg',
-
-    'Аптека.ру' => './img/apteka.jpg',
-
-    'DNS' => './img/dns.jpg',
-
-    'SUNLIGHT' => './img/sunlight.jpg',
-
-    'Детский мир' => './img/detskiy.jpg',
-
-    'Авито' => './img/avito.jpg',
-
+    'ozon' => './img/ozon.jpg',
+    'wb' => './img/wild.jpg',
+    'sdek' => './img/sdek.jpg',
+    'apteka' => './img/apteka.jpg',
+    'dns' => './img/dns.jpg',
+    'sunlight' => './img/sunlight.jpg',
+    'kids' => './img/detskiy.jpg',
+    'avito' => './img/avito.jpg',
     '5post' => './img/5post.jpg',
-
-    'Яндекс Маркет' => './img/yamarket.jpg',
-
-    'ПОЧТА РОССИИ' => './img/pochta.jpg',
-
-    'Все инструменты' => './img/instrumenti.jpg',
-
-    'Яндекс доставка' => './img/dostavka.jpg',
-
+    'market' => './img/yamarket.jpg',
+    'post' => './img/pochta.jpg',
+    'vsei' => './img/instrumenti.jpg',
+    'dostavka' => './img/dostavka.jpg',
 ];
