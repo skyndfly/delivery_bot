@@ -3,7 +3,6 @@
 use classes\ApiYandexDisk;
 use classes\TelegramBot;
 use Telegram\Bot\Api;
-use Telegram\Bot\FileUpload\InputFile;
 use Telegram\Bot\Objects\CallbackQuery;
 
 require_once "vendor/autoload.php";
@@ -21,7 +20,6 @@ try {
     $botToken = "8000230460:AAFU0ivU-a2PVr69iWUf5K3JLc7d791Xknw";
     $telegram = new Api($botToken);
 
-    $keys = require_once 'data/keys.php';
     $firms = require_once 'data/firms.php';
     $address = require_once 'data/address.php';
     $images = require_once 'data/images.php';
@@ -29,7 +27,6 @@ try {
 
     $bot = new TelegramBot(
         $telegram,
-        $keys,
         $firms,
         $address,
         $images,
@@ -47,6 +44,12 @@ try {
         if ($text == "/start") {
             $apiDisk->createFolder($currentDate);
             $bot->actionStart($chat_id);
+        }else if ($text == "/restart") {
+            $apiDisk->createFolder($currentDate);
+            $bot->actionStart($chat_id);
+        }else if ($message->has('photo')){
+            $photos = $message->getPhoto();
+            log_dump(111111);
         }
     }
     /** @var CallbackQuery|null $callbackQuery */
@@ -57,13 +60,13 @@ try {
 
         if (str_starts_with($data, 'firm|')) {
             $firm = substr($data, strlen('firm|'));
-            $apiDisk->createFolder($currentDate . '/' . $firm);
+            $apiDisk->createFolder($currentDate . '/' . $firms[$firm]);
             $bot->actionSelectedFirm($firm, $chatId);
 
         }
         if (str_starts_with($data, 'address|')) {
             [, $firm, $address] = explode('|', $data, 3);
-            $apiDisk->createFolder($currentDate . '/' . $firm . '/' . $address);
+            $apiDisk->createFolder($currentDate . '/' . $firms[$firm] . '/' . $address);
             $bot->actionSelectedAddress($chatId);
         }
     }
