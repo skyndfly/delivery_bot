@@ -18,7 +18,7 @@ try {
     $notes = require_once 'data/notes.php';
 
 
-    $botToken = "8000230460:AAFU0ivU-a2PVr69iWUf5K3JLc7d791Xknw";
+    $botToken = "";
     $telegram = new Api($botToken);
     $redis = new StepStorage();
 
