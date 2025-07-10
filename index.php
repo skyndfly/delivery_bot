@@ -1,6 +1,7 @@
 <?php
 
 use classes\ApiYandexDisk;
+use classes\StepStorage;
 use classes\TelegramBot;
 use Telegram\Bot\Api;
 use Telegram\Bot\Objects\CallbackQuery;
@@ -19,6 +20,7 @@ try {
 
     $botToken = "8000230460:AAFU0ivU-a2PVr69iWUf5K3JLc7d791Xknw";
     $telegram = new Api($botToken);
+    $redis = new StepStorage();
 
     $firms = require_once 'data/firms.php';
     $address = require_once 'data/address.php';
@@ -38,16 +40,18 @@ try {
     $message = $update->getMessage();
     $currentDate = (new DateTimeImmutable())->format('m-d-Y');
     if ($message) {
-        $chat_id = $message->getChat()->getId();
+        $chatId = $message->getChat()->getId();
         $text = $message->getText();
 
         if ($text == "/start") {
             $apiDisk->createFolder($currentDate);
-            $bot->actionStart($chat_id);
+            $bot->actionStart($chatId);
+            $redis->setStep($chatId, 'firm_select');
         }else if ($text == "/restart") {
             $apiDisk->createFolder($currentDate);
-            $bot->actionStart($chat_id);
-        }else if ($message->has('photo')){
+            $bot->actionStart($chatId);
+            $redis->setStep($chatId, 'firm_select');
+        }else if ($message->has('photo') && $redis->getStep($chatId) === 'awaiting_photo'){
             $photos = $message->getPhoto();
             log_dump(111111);
         }
@@ -62,12 +66,13 @@ try {
             $firm = substr($data, strlen('firm|'));
             $apiDisk->createFolder($currentDate . '/' . $firms[$firm]);
             $bot->actionSelectedFirm($firm, $chatId);
-
+            $redis->setStep($chatId, 'firm_selected');
         }
         if (str_starts_with($data, 'address|')) {
             [, $firm, $address] = explode('|', $data, 3);
             $apiDisk->createFolder($currentDate . '/' . $firms[$firm] . '/' . $address);
             $bot->actionSelectedAddress($chatId);
+            $redis->setStep($chatId, 'awaiting_photo');
         }
     }
 } catch (Exception|Error $e) {
