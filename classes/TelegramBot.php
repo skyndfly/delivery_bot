@@ -2,13 +2,12 @@
 
 namespace classes;
 
+use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
 
 class TelegramBot
 {
-    public string $selectedFirm;
-    public string $selectedAddress;
     private array $firms;
     private array $address;
     private array $images;
@@ -62,7 +61,7 @@ class TelegramBot
             foreach ($this->address[$firm] as $label) {
                 $keyboard[] = [[
                     'text' => $label,
-                    'callback_data' =>  'address|' . $firm .'|'. $label,
+                    'callback_data' => 'address|' . $firm . '|' . $label,
                 ]];
             }
             $this->telegram->sendPhoto([
@@ -83,7 +82,21 @@ class TelegramBot
             'text' => 'Прикрепите штрих код'
         ]);
     }
+    public function actionBadUpload(int $chatId): void
+    {
+        $this->telegram->sendMessage([
+            'chat_id' => $chatId,
+            'text' => 'При загрузке кода произошла ошибка, попробуйте еще раз или отправьте код по номеру телефона +7 925 230-63-75'
+        ]);
+    }
 
+    public function getImagePath(Collection $photos, $botToken): string
+    {
+        $large = $photos[count($photos) - 2];
+        $fileId = $large->getFileId();
+        $file = $this->telegram->getFile(['file_id' => $fileId]);
+        return "https://api.telegram.org/file/bot{$botToken}/{$file->getFilePath()}";
+    }
 
     private function getMessageCaption(string $firm): string
     {

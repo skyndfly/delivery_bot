@@ -26,4 +26,12 @@ class StepStorage
     {
         $this->redis->set('step:' . $chatId, $step);
     }
+    public function getPath(int $path): ?string
+    {
+        return $this->redis->get('path:' . $path);
+    }
+    public function setPath(int $chatId, string $path): void
+    {
+        $this->redis->set('path:' . $chatId, $path);
+    }
 }

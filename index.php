@@ -3,29 +3,24 @@
 use classes\ApiYandexDisk;
 use classes\StepStorage;
 use classes\TelegramBot;
+use enums\StateEnum;
 use Telegram\Bot\Api;
 use Telegram\Bot\Objects\CallbackQuery;
 
 require_once "vendor/autoload.php";
-function log_dump($var, $title = '')
-{
-    ob_start();
-    echo "\n--- $title ---\n";
-    var_dump($var);
-    echo "\n";
-    file_put_contents("log.txt", ob_get_clean(), FILE_APPEND);
-}
+require_once 'helpers/functions.php';
 
 try {
-
-    $botToken = "8000230460:AAFU0ivU-a2PVr69iWUf5K3JLc7d791Xknw";
-    $telegram = new Api($botToken);
-    $redis = new StepStorage();
 
     $firms = require_once 'data/firms.php';
     $address = require_once 'data/address.php';
     $images = require_once 'data/images.php';
     $notes = require_once 'data/notes.php';
+
+
+    $botToken = "8000230460:AAFU0ivU-a2PVr69iWUf5K3JLc7d791Xknw";
+    $telegram = new Api($botToken);
+    $redis = new StepStorage();
 
     $bot = new TelegramBot(
         $telegram,
@@ -38,7 +33,7 @@ try {
 
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
-    $currentDate = (new DateTimeImmutable())->format('m-d-Y');
+    $currentDate = (new DateTimeImmutable())->format('d-m-Y');
     if ($message) {
         $chatId = $message->getChat()->getId();
         $text = $message->getText();
@@ -46,14 +41,18 @@ try {
         if ($text == "/start") {
             $apiDisk->createFolder($currentDate);
             $bot->actionStart($chatId);
-            $redis->setStep($chatId, 'firm_select');
-        }else if ($text == "/restart") {
+            $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
+        } else if ($text == "/restart") {
             $apiDisk->createFolder($currentDate);
             $bot->actionStart($chatId);
-            $redis->setStep($chatId, 'firm_select');
-        }else if ($message->has('photo') && $redis->getStep($chatId) === 'awaiting_photo'){
+            $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
+        } else if ($message->has('photo') && $redis->getStep($chatId) === StateEnum::AWAITING_PHOTO->value) {
             $photos = $message->getPhoto();
-            log_dump(111111);
+            $url = $bot->getImagePath($photos, $botToken);
+            if (!$apiDisk->uploadFile($url, $redis->getPath($chatId))){
+                $bot->actionBadUpload($chatId);
+            }
+
         }
     }
     /** @var CallbackQuery|null $callbackQuery */
@@ -66,13 +65,15 @@ try {
             $firm = substr($data, strlen('firm|'));
             $apiDisk->createFolder($currentDate . '/' . $firms[$firm]);
             $bot->actionSelectedFirm($firm, $chatId);
-            $redis->setStep($chatId, 'firm_selected');
+            $redis->setStep($chatId, StateEnum::FIRM_SELECTED->value);
         }
         if (str_starts_with($data, 'address|')) {
             [, $firm, $address] = explode('|', $data, 3);
-            $apiDisk->createFolder($currentDate . '/' . $firms[$firm] . '/' . $address);
+            $path = $currentDate . '/' . $firms[$firm] . '/' . $address;
+            $apiDisk->createFolder($path);
             $bot->actionSelectedAddress($chatId);
-            $redis->setStep($chatId, 'awaiting_photo');
+            $redis->setPath($chatId, $path);
+            $redis->setStep($chatId, StateEnum::AWAITING_PHOTO->value);
         }
     }
 } catch (Exception|Error $e) {
