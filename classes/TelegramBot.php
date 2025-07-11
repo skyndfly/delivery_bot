@@ -5,6 +5,7 @@ namespace classes;
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
+use Telegram\Bot\Objects\BotCommand;
 
 class TelegramBot
 {
@@ -73,6 +74,14 @@ class TelegramBot
                 ])
             ]);
         }
+    }
+
+    public function actionSuccessDownload(int $chatId): void
+    {
+        $this->telegram->sendMessage([
+            'chat_id' => $chatId,
+            'text' => 'Код принят ✅'
+        ]);
     }
 
     public function actionSelectedAddress(int $chatId): void

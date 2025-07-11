@@ -3,6 +3,7 @@
 use classes\ApiYandexDisk;
 use classes\StepStorage;
 use classes\TelegramBot;
+use Dotenv\Dotenv;
 use enums\StateEnum;
 use Telegram\Bot\Api;
 use Telegram\Bot\Objects\CallbackQuery;
@@ -18,7 +19,11 @@ try {
     $notes = require_once 'data/notes.php';
 
 
-    $botToken = "";
+    $dotenv = Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+
+    $botToken = $_ENV['BOT_TOKEN'] ?? null;
+
     $telegram = new Api($botToken);
     $redis = new StepStorage();
 
@@ -37,7 +42,6 @@ try {
     if ($message) {
         $chatId = $message->getChat()->getId();
         $text = $message->getText();
-
         if ($text == "/start") {
             $apiDisk->createFolder($currentDate);
             $bot->actionStart($chatId);
@@ -49,9 +53,14 @@ try {
         } else if ($message->has('photo') && $redis->getStep($chatId) === StateEnum::AWAITING_PHOTO->value) {
             $photos = $message->getPhoto();
             $url = $bot->getImagePath($photos, $botToken);
-            if (!$apiDisk->uploadFile($url, $redis->getPath($chatId))){
+            if (!$apiDisk->uploadFile($url, $redis->getPath($chatId))) {
                 $bot->actionBadUpload($chatId);
+            }else{
+                $bot->actionSuccessDownload($chatId);
+                $bot->actionStart($chatId);
+                $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
             }
+
 
         }
     }
