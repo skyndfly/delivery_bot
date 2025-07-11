@@ -24,6 +24,10 @@ try {
 
     $botToken = $_ENV['BOT_TOKEN'] ?? null;
 
+    if ($botToken === null) {
+        throw new Exception('BotToken not defined');
+    }
+
     $telegram = new Api($botToken);
     $redis = new StepStorage();
 
@@ -39,29 +43,35 @@ try {
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
     $currentDate = (new DateTimeImmutable())->format('d-m-Y');
-    if ($message) {
+    $apiDisk->createFolder($currentDate);
+    if ($message && $message->getFrom()->getIsBot() === false) {
         $chatId = $message->getChat()->getId();
         $text = $message->getText();
-        if ($text == "/start") {
-            $apiDisk->createFolder($currentDate);
+        $step = $redis->getStep($chatId);
+
+        if ($text === "/start" || $text === "/restart") {
             $bot->actionStart($chatId);
             $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
-        } else if ($text == "/restart") {
-            $apiDisk->createFolder($currentDate);
-            $bot->actionStart($chatId);
-            $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
-        } else if ($message->has('photo') && $redis->getStep($chatId) === StateEnum::AWAITING_PHOTO->value) {
-            $photos = $message->getPhoto();
-            $url = $bot->getImagePath($photos, $botToken);
-            if (!$apiDisk->uploadFile($url, $redis->getPath($chatId))) {
-                $bot->actionBadUpload($chatId);
-            }else{
-                $bot->actionSuccessDownload($chatId);
-                $bot->actionStart($chatId);
-                $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
+        } elseif (!$message->has('photo') && $step === StateEnum::AWAITING_PHOTO->value) {
+            $bot->actionSendError($chatId);
+        } elseif ($message->has('photo')) {
+            if ($step === StateEnum::AWAITING_PHOTO->value) {
+                $photos = $message->getPhoto();
+                $url = $bot->getImagePath($photos, $botToken);
+                if (!$apiDisk->uploadFile($url, $redis->getPath($chatId))) {
+                    $bot->actionBadUpload($chatId);
+                } else {
+                    $bot->actionSuccessDownload($chatId);
+                    $redis->setStep($chatId, StateEnum::PAUSE->value);
+                }
+            } else {
+                $bot->actionSendError($chatId);
             }
-
-
+        } elseif (!in_array($text, ['/start', '/restart']) && $step === StateEnum::FIRM_SELECT->value) {
+            $bot->actionSendError($chatId);
+        } elseif (!in_array($text, ['/start', '/restart']) && $step === StateEnum::FIRM_SELECTED->value) {
+            $bot->actionSendError($chatId);
+            // Повторно показывать адреса не получится без выбранной фирмы, поэтому лучше не повторять вывод клавиатуры здесь
         }
     }
     /** @var CallbackQuery|null $callbackQuery */
@@ -70,21 +80,34 @@ try {
         $chatId = $callbackQuery->getMessage()->getChat()->getId();
         $data = $callbackQuery->getData();
 
-        if (str_starts_with($data, 'firm|')) {
+        if ($data === 'action_start') {
+            $bot->actionStart($chatId);
+            $redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
+            $bot->answerCallback($callbackQuery->getId());
+        } elseif ($data === 'action_end') {
+            $bot->actionEnd($chatId);
+            $redis->setStep($chatId, StateEnum::PAUSE->value);
+            $bot->answerCallback($callbackQuery->getId());
+        } elseif (str_starts_with($data, 'firm|')) {
             $firm = substr($data, strlen('firm|'));
             $apiDisk->createFolder($currentDate . '/' . $firms[$firm]);
             $bot->actionSelectedFirm($firm, $chatId);
             $redis->setStep($chatId, StateEnum::FIRM_SELECTED->value);
-        }
-        if (str_starts_with($data, 'address|')) {
+            $bot->answerCallback($callbackQuery->getId());
+        } elseif (str_starts_with($data, 'address|')) {
             [, $firm, $address] = explode('|', $data, 3);
             $path = $currentDate . '/' . $firms[$firm] . '/' . $address;
             $apiDisk->createFolder($path);
             $bot->actionSelectedAddress($chatId);
             $redis->setPath($chatId, $path);
             $redis->setStep($chatId, StateEnum::AWAITING_PHOTO->value);
+            $bot->answerCallback($callbackQuery->getId());
         }
     }
 } catch (Exception|Error $e) {
-    file_put_contents("log.txt", "Exception: {$e->getMessage()}\n", FILE_APPEND);
+    file_put_contents(
+        "log.txt",
+        (new DateTimeImmutable())->format('d-m-Y-H-i-s') . " Exception: {$e->getMessage()}\n" . " Code: {$e->getCode()}\n",
+        FILE_APPEND
+    );
 }
