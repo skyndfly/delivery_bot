@@ -1,8 +1,8 @@
 <?php
 
-use classes\ApiYandexDisk;
-use classes\StepStorage;
-use classes\TelegramBot;
+use api\ApiYandexDisk;
+use api\TelegramBot;
+use db\StepStorage;
 use Dotenv\Dotenv;
 use enums\StateEnum;
 use Telegram\Bot\Api;

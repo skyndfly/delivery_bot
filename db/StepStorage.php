@@ -1,6 +1,6 @@
 <?php
 
-namespace classes;
+namespace db;
 
 use Predis\Client;
 

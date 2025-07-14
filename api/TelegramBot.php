@@ -1,11 +1,10 @@
 <?php
 
-namespace classes;
+namespace api;
 
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
-use Telegram\Bot\Objects\BotCommand;
 
 class TelegramBot
 {
