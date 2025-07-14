@@ -11,6 +11,7 @@
         "psr-4": {
             "api\\": "api/",
             "db\\": "db/",
+            "bootstrap\\": "bootstrap/",
             "enums\\": "enums/"
         }
     },

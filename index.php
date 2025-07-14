@@ -2,6 +2,7 @@
 
 use api\ApiYandexDisk;
 use api\TelegramBot;
+use bootstrap\EnvLoader;
 use db\StepStorage;
 use Dotenv\Dotenv;
 use enums\StateEnum;
@@ -18,9 +19,9 @@ try {
     $images = require_once 'data/images.php';
     $notes = require_once 'data/notes.php';
 
+    EnvLoader::load();
 
-    $dotenv = Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
+
 
     $botToken = $_ENV['BOT_TOKEN'] ?? null;
     $diskToken = $_ENV['DISK_TOKEN'] ?? null;
