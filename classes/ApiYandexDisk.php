@@ -46,7 +46,7 @@ class ApiYandexDisk
             $this->client->request(
                 'POST',
                 "https://cloud-api.yandex.net/v1/disk/resources/upload?url={$url}&path=" . self::BASE_FOLDER . "/" .
-                urlencode($filePath). '/' . uniqid() . $extension
+                urlencode($filePath). '/' . uniqid() .'.'. $extension
             );
             return true;
         }catch (ClientException $e) {
