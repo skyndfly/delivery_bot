@@ -12,6 +12,7 @@
             "api\\": "api/",
             "db\\": "db/",
             "bootstrap\\": "bootstrap/",
+            "handler\\": "handler/",
             "enums\\": "enums/"
         }
     },
