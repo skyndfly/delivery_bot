@@ -7,15 +7,14 @@ use GuzzleHttp\Exception\ClientException;
 
 class ApiYandexDisk
 {
-    private const string ACCESS_TOKEN = 'y0__xC9rdSSBhji7TggrZne4hN0SVH1fRYfV1j0NK1YzbqHMdK_mQ';
     private const string BASE_FOLDER = 'delivery_bot';
     private Client $client;
 
-    public function __construct()
+    public function __construct(string $token)
     {
         $this->client = new Client([
             'headers' => [
-                'Authorization' => 'OAuth ' . self::ACCESS_TOKEN,
+                'Authorization' => 'OAuth ' . $token,
             ]
         ]);
         $this->createBaseFolder();

@@ -23,6 +23,7 @@ try {
     $dotenv->load();
 
     $botToken = $_ENV['BOT_TOKEN'] ?? null;
+    $diskToken = $_ENV['DISK_TOKEN'] ?? null;
 
     if ($botToken === null) {
         throw new Exception('BotToken not defined');
@@ -38,7 +39,7 @@ try {
         $images,
         $notes
     );
-    $apiDisk = new ApiYandexDisk();
+    $apiDisk = new ApiYandexDisk($diskToken);
 
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
