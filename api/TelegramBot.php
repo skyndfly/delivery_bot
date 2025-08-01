@@ -2,6 +2,7 @@
 
 namespace api;
 
+use components\telegram\KeyBoardBuilder;
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
 use Telegram\Bot\FileUpload\InputFile;
@@ -15,15 +16,18 @@ class TelegramBot
 
     private Api $telegram;
 
+    private KeyBoardBuilder $keyboardBuilder;
 
     public function __construct(
         Api $telegram,
+        KeyBoardBuilder $keyboardBuilder,
         array $firms,
         array $address,
         array $images,
         array $notes
     ) {
         $this->telegram = $telegram;
+        $this->keyboardBuilder = $keyboardBuilder;
         $this->firms = $firms;
         $this->address = $address;
         $this->images = $images;
@@ -33,46 +37,31 @@ class TelegramBot
 
     public function actionStart(int $chatId): void
     {
-        $keyboard = [];
-
-        foreach ($this->firms as $key => $label) {
-            $keyboard[] = [[
-                'text' => $label . ' ✅',
-                'callback_data' => 'firm|' . $key,
-            ]];
-        }
 
         $this->telegram->sendPhoto([
             'chat_id' => $chatId,
             'photo' => InputFile::create('./img/cover.jpg'),
             'caption' => 'Выберите откуда нужна доставка 🚕',
             'reply_markup' => json_encode([
-                'inline_keyboard' => $keyboard,
+                'inline_keyboard' => $this->keyboardBuilder->fromFirms($this->firms),
             ])
         ]);
     }
 
     public function actionSelectedFirm(string $firm, int $chatId): void
     {
-
-        if (isset($this->address[$firm])) {
-            $keyboard = [];
-
-            foreach ($this->address[$firm] as $label) {
-                $keyboard[] = [[
-                    'text' => $label,
-                    'callback_data' => 'address|' . $firm . '|' . $label,
-                ]];
-            }
-            $this->telegram->sendPhoto([
-                'chat_id' => $chatId,
-                'photo' => InputFile::create($this->images[$firm]),
-                'caption' => $this->getMessageCaption($firm),
-                'reply_markup' => json_encode([
-                    'inline_keyboard' => $keyboard,
-                ])
-            ]);
+        if (!isset($this->address[$firm])) {
+            $this->actionSendError($chatId);
         }
+        $this->telegram->sendPhoto([
+            'chat_id' => $chatId,
+            'photo' => InputFile::create($this->images[$firm]),
+            'caption' => $this->getMessageCaption($firm),
+            'reply_markup' => json_encode([
+                'inline_keyboard' => $this->keyboardBuilder->fromAddress($firm, $this->address[$firm]),
+            ])
+        ]);
+
     }
 
     public function actionSendError(int $chatId): void
@@ -157,8 +146,8 @@ class TelegramBot
     public function actionBadUpload(int $chatId): void
     {
         $this->sendTextMessage(
-            $chatId,
-            'При загрузке кода произошла ошибка, попробуйте еще раз или отправьте код по номеру телефона +7 925 230-63-75'
+            chatId: $chatId,
+            text: 'При загрузке кода произошла ошибка, попробуйте еще раз или отправьте код по номеру телефона +7 925 230-63-75'
         );
     }
 

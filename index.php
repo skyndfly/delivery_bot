@@ -3,6 +3,7 @@
 use api\ApiYandexDisk;
 use api\TelegramBot;
 use bootstrap\EnvLoader;
+use components\telegram\KeyBoardBuilder;
 use db\StepStorage;
 use handler\CallbackQuery;
 use handler\MessageHandler;
@@ -30,13 +31,14 @@ try {
 
     $telegram = new Api($botToken);
     $redis = new StepStorage();
-
+    $keyBoardBuilder = new KeyBoardBuilder();
     $bot = new TelegramBot(
-        $telegram,
-        $firms,
-        $address,
-        $images,
-        $notes
+        telegram: $telegram,
+        keyboardBuilder: $keyBoardBuilder,
+        firms: $firms,
+        address: $address,
+        images: $images,
+        notes: $notes
     );
     $apiDisk = new ApiYandexDisk($diskToken);
 
