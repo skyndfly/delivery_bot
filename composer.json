@@ -13,6 +13,7 @@
             "db\\": "db/",
             "bootstrap\\": "bootstrap/",
             "handler\\": "handler/",
+            "components\\": "components/",
             "enums\\": "enums/"
         }
     },
