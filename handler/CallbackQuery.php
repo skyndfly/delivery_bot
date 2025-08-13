@@ -12,11 +12,11 @@ use Telegram\Bot\Objects\Update;
 class CallbackQuery implements HandlerInterface
 {
     public function __construct(
-        private TelegramBot $bot,
-        private StepStorage $redis,
-        private ApiYandexDisk $apiDisk,
-        private DateTimeInterface $currentDate,
-        private array $firms
+        private readonly TelegramBot $bot,
+        private readonly StepStorage $redis,
+        private readonly ApiYandexDisk $apiDisk,
+        private readonly DateTimeInterface $currentDate,
+        private readonly array $firms
     ) {
     }
 

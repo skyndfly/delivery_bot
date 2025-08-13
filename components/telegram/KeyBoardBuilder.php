@@ -57,4 +57,12 @@ class KeyBoardBuilder
             ]],
         ];
     }
+
+    public function fromError(): array
+    {
+        return [[[
+            'text' => 'СТАРТ ✅',
+            'callback_data' => 'action_start',
+        ]]];
+    }
 }

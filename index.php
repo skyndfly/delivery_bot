@@ -4,6 +4,7 @@ use api\ApiYandexDisk;
 use api\TelegramBot;
 use bootstrap\EnvLoader;
 use components\telegram\KeyBoardBuilder;
+use components\telegram\MessageSender;
 use db\StepStorage;
 use handler\CallbackQuery;
 use handler\MessageHandler;
@@ -18,6 +19,7 @@ try {
     $address = require_once 'data/address.php';
     $images = require_once 'data/images.php';
     $notes = require_once 'data/notes.php';
+    $telegramMessages = require_once 'messages/telegram.php';
 
     EnvLoader::load();
 
@@ -32,13 +34,16 @@ try {
     $telegram = new Api($botToken);
     $redis = new StepStorage();
     $keyBoardBuilder = new KeyBoardBuilder();
+    $telegramMessageSender = new MessageSender($telegram);
     $bot = new TelegramBot(
         telegram: $telegram,
         keyboardBuilder: $keyBoardBuilder,
         firms: $firms,
         address: $address,
         images: $images,
-        notes: $notes
+        notes: $notes,
+        messages: $telegramMessages,
+        sender: $telegramMessageSender
     );
     $apiDisk = new ApiYandexDisk($diskToken);
 

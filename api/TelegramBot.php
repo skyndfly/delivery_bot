@@ -3,20 +3,21 @@
 namespace api;
 
 use components\telegram\KeyBoardBuilder;
+use components\telegram\MessageSender;
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
-use Telegram\Bot\FileUpload\InputFile;
-
 class TelegramBot
 {
     private array $firms;
     private array $address;
     private array $images;
     private array $notes;
+    private array $messages;
 
     private Api $telegram;
 
     private KeyBoardBuilder $keyboardBuilder;
+    private MessageSender $sender;
 
     public function __construct(
         Api $telegram,
@@ -24,7 +25,9 @@ class TelegramBot
         array $firms,
         array $address,
         array $images,
-        array $notes
+        array $notes,
+        array $messages,
+        MessageSender $sender
     ) {
         $this->telegram = $telegram;
         $this->keyboardBuilder = $keyboardBuilder;
@@ -32,104 +35,79 @@ class TelegramBot
         $this->address = $address;
         $this->images = $images;
         $this->notes = $notes;
+        $this->sender = $sender;
+        $this->messages = $messages;
     }
 
 
     public function actionStart(int $chatId): void
     {
-
-        $this->telegram->sendPhoto([
-            'chat_id' => $chatId,
-            'photo' => InputFile::create('./img/cover.jpg'),
-            'caption' => 'Выберите откуда нужна доставка 🚕',
-            'reply_markup' => json_encode([
-                'inline_keyboard' => $this->keyboardBuilder->fromFirms($this->firms),
-            ])
-        ]);
+        $this->sender->sendPhoto(
+            chatId: $chatId,
+            photoPath: $this->messages['start']['img'],
+            caption: $this->messages['start']['text'],
+            keyboard: $this->keyboardBuilder->fromFirms($this->firms)
+        );
     }
 
     public function actionSelectedFirm(string $firm, int $chatId): void
     {
         if (!isset($this->address[$firm])) {
             $this->actionSendError($chatId);
+            return;
         }
-        $this->telegram->sendPhoto([
-            'chat_id' => $chatId,
-            'photo' => InputFile::create($this->images[$firm]),
-            'caption' => $this->getMessageCaption($firm),
-            'reply_markup' => json_encode([
-                'inline_keyboard' => $this->keyboardBuilder->fromAddress($firm, $this->address[$firm]),
-            ])
-        ]);
+        $this->sender->sendPhoto(
+            chatId: $chatId,
+            photoPath: $this->images[$firm],
+            caption: $this->getMessageCaption($firm),
+            keyboard: $this->keyboardBuilder->fromAddress($firm, $this->address[$firm])
+        );
 
     }
 
     public function actionSendError(int $chatId): void
     {
-
-        $this->telegram->sendPhoto([
-            'chat_id' => $chatId,
-            'photo' => InputFile::create('./img/error.jpg'),
-            'caption' => 'ВНИМАНИЕ ‼️
-
-Последовательность действий нарушена! ❌
-
-1) Нажмите кнопку  СТАРТ
-
-2) Выберите пункт откуда нужно забрать ВАШ заказ
-
-3) Укажите адрес пункта 
-
-4) Прикрепить штрих код!
-
-🅱️ Важно, если эти действия не выполнить штрих код будет не забран ❌',
-            'reply_markup' => json_encode([
-                'inline_keyboard' => [[[
-                    'text' => 'СТАРТ ✅',
-                    'callback_data' => 'action_start',
-                ]]],
-            ])
-        ]);
+        $this->sender->sendPhoto(
+            chatId: $chatId,
+            photoPath: $this->messages['error']['img'],
+            caption: $this->messages['error']['text'],
+            keyboard:$this->keyboardBuilder->fromError()
+        );
 
     }
 
     public function actionSuccessDownload(int $chatId): void
     {
-        $this->telegram->sendPhoto([
-            'chat_id' => $chatId,
-            'photo' => InputFile::create('./img/congrat.jpg'),
-            'caption' => "Заказ принят!👍\n\nВыберите следующий шаг👇",
-            'reply_markup' => json_encode([
-                'inline_keyboard' => $this->keyboardBuilder->fromSuccess()
-            ])
-        ]);
+        $this->sender->sendPhoto(
+            chatId: $chatId,
+            photoPath: $this->messages['success']['img'],
+            caption: $this->messages['success']['text'],
+            keyboard:$this->keyboardBuilder->fromSuccess()
+        );
     }
 
     public function actionEnd(int $chatId): void
     {
-        $this->telegram->sendMessage([
-            'chat_id' => $chatId,
-            'text' => "Все заказы приняты и будут доставлены.\n\nЗабрать свой заказ Вы сможете:
-г. Антрацит, ул. Петровского 21 , за налоговой 108 кабинет",
-            'reply_markup' => json_encode([
-                'inline_keyboard' => $this->keyboardBuilder->fromEnd(),
-            ])
-        ]);
+        $this->sender->sendText(
+            chatId: $chatId,
+            text: $this->messages['end']['text'],
+            keyboard: $this->keyboardBuilder->fromEnd()
+        );
     }
 
     public function actionSelectedAddress(int $chatId): void
     {
-        $this->sendTextMessage(
+        $this->sender->sendText(
             chatId: $chatId,
-            text: 'Прикрепите штрих код'
+            text: $this->messages['checkQR']['text']
         );
     }
 
     public function actionBadUpload(int $chatId): void
     {
-        $this->sendTextMessage(
+        $this->sender->sendText(
             chatId: $chatId,
-            text: 'При загрузке кода произошла ошибка, попробуйте еще раз или отправьте код по номеру телефона +7 925 230-63-75'
+            text: $this->messages['badUpload']['text']
         );
     }
 
@@ -141,26 +119,17 @@ class TelegramBot
         return "https://api.telegram.org/file/bot{$botToken}/{$file->getFilePath()}";
     }
 
-    private function getMessageCaption(string $firm): string
-    {
-        if (isset($this->notes[$firm])) {
-            return $this->notes[$firm] . "\nВыберите пункт 🏦";
-        }
-        return "Выберите пункт 🏦";
-    }
-
-    private function sendTextMessage(string $chatId, string $text): void
-    {
-        $this->telegram->sendMessage([
-            'chat_id' => $chatId,
-            'text' => $text
-        ]);
-    }
-
     public function answerCallback(int $id): void
     {
         $this->telegram->answerCallbackQuery([
             'callback_query_id' => $id,
         ]);
     }
+    private function getMessageCaption(string $firm): string
+    {
+        return isset($this->notes[$firm])
+            ? $this->notes[$firm] .$this->messages['point']['text']
+            : $this->messages['point']['text'];
+    }
+
 }
