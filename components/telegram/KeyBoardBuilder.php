@@ -1,5 +1,7 @@
 <?php
+
 namespace components\telegram;
+
 use enums\CallbackDataEnum;
 
 class KeyBoardBuilder
@@ -26,5 +28,33 @@ class KeyBoardBuilder
             ]],
             $addresses
         );
+    }
+
+    public function fromSuccess(): array
+    {
+        return [
+            [[
+                'text' => 'Добавить код ✅',
+                'callback_data' => 'action_start',
+            ]],
+            [[
+                'text' => 'Оформить доставку 🚛',
+                'url' => 'https://t.me/kolibridelivery_bot',
+            ]],
+            [[
+                'text' => 'Завершить ❗️',
+                'callback_data' => 'action_end',
+            ]],
+        ];
+    }
+
+    public function fromEnd(): array
+    {
+        return [
+            [[
+                'text' => 'Добавить код ✅',
+                'callback_data' => 'action_start',
+            ]],
+        ];
     }
 }

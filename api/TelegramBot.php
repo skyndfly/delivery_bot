@@ -100,20 +100,7 @@ class TelegramBot
             'photo' => InputFile::create('./img/congrat.jpg'),
             'caption' => "Заказ принят!👍\n\nВыберите следующий шаг👇",
             'reply_markup' => json_encode([
-                'inline_keyboard' => [
-                    [[
-                        'text' => 'Добавить код ✅',
-                        'callback_data' => 'action_start',
-                    ]],
-                    [[
-                        'text' => 'Оформить доставку 🚛',
-                        'url' => 'https://t.me/kolibridelivery_bot',
-                    ]],
-                    [[
-                        'text' => 'Завершить ❗️',
-                        'callback_data' => 'action_end',
-                    ]],
-                ],
+                'inline_keyboard' => $this->keyboardBuilder->fromSuccess()
             ])
         ]);
     }
@@ -125,12 +112,7 @@ class TelegramBot
             'text' => "Все заказы приняты и будут доставлены.\n\nЗабрать свой заказ Вы сможете:
 г. Антрацит, ул. Петровского 21 , за налоговой 108 кабинет",
             'reply_markup' => json_encode([
-                'inline_keyboard' => [
-                    [[
-                        'text' => 'Добавить код ✅',
-                        'callback_data' => 'action_start',
-                    ]],
-                ],
+                'inline_keyboard' => $this->keyboardBuilder->fromEnd(),
             ])
         ]);
     }
@@ -138,8 +120,8 @@ class TelegramBot
     public function actionSelectedAddress(int $chatId): void
     {
         $this->sendTextMessage(
-            $chatId,
-            'Прикрепите штрих код'
+            chatId: $chatId,
+            text: 'Прикрепите штрих код'
         );
     }
 
@@ -175,7 +157,7 @@ class TelegramBot
         ]);
     }
 
-    public function answerCallback(int $id)
+    public function answerCallback(int $id): void
     {
         $this->telegram->answerCallbackQuery([
             'callback_query_id' => $id,
