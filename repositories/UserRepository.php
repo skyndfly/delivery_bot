@@ -26,7 +26,10 @@ class UserRepository
             $this->client->sadd(self::KEY, ...array_map('strval', $users));
         }
     }
-
+    public function addUser(int $userId): void
+    {
+        $this->client->sadd(self::KEY,[ (string)$userId]);
+    }
     public function exists(int $userId): bool
     {
         return $this->client->sismember(self::KEY, (string)$userId);
