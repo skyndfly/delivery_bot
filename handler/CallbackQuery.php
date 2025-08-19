@@ -2,20 +2,22 @@
 
 namespace handler;
 
-use api\ApiYandexDisk;
-use api\TelegramBot;
+use api\YandexDiskApi;
+use api\TelegramBotApi;
 use DateTimeInterface;
-use db\StepStorage;
 use enums\StateEnum;
+use repositories\StepRepository;
+use services\AuthorizeService;
 use Telegram\Bot\Objects\Update;
 
 class CallbackQuery implements HandlerInterface
 {
     public function __construct(
-        private readonly TelegramBot $bot,
-        private readonly StepStorage $redis,
-        private readonly ApiYandexDisk $apiDisk,
+        private readonly TelegramBotApi $bot,
+        private readonly StepRepository $redis,
+        private readonly YandexDiskApi $apiDisk,
         private readonly DateTimeInterface $currentDate,
+        private readonly AuthorizeService $authorize,
         private readonly array $firms
     ) {
     }
@@ -25,7 +27,10 @@ class CallbackQuery implements HandlerInterface
         $callbackQuery = $update->get('callback_query');
         $chatId = $callbackQuery->getMessage()->getChat()->getId();
         $data = $callbackQuery->getData();
-
+        if (!$this->authorize->handle($chatId)){
+            $this->bot->actionNoAuthorize($chatId);
+            return;
+        }
         if ($data === 'action_start') {
             $this->bot->actionStart($chatId);
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECT->value);

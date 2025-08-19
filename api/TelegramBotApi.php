@@ -6,7 +6,7 @@ use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
-class TelegramBot
+class TelegramBotApi
 {
     private array $firms;
     private array $address;
@@ -111,9 +111,17 @@ class TelegramBot
         );
     }
 
+    public function actionNoAuthorize(int $chatId): void
+    {
+        $this->sender->sendText(
+            chatId: $chatId,
+            text: $this->messages['noAuthorize']['text']
+        );
+    }
+
     public function getImagePath(Collection $photos, $botToken): string
     {
-        $large = $photos[count($photos) - 2];
+        $large = $photos[count($photos) - 1];
         $fileId = $large->getFileId();
         $file = $this->telegram->getFile(['file_id' => $fileId]);
         return "https://api.telegram.org/file/bot{$botToken}/{$file->getFilePath()}";

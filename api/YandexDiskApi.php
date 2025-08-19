@@ -5,7 +5,7 @@ namespace api;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 
-class ApiYandexDisk
+class YandexDiskApi
 {
     private const string BASE_FOLDER = 'delivery_bot';
     private Client $client;
