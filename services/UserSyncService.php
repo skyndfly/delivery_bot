@@ -17,16 +17,16 @@ class UserSyncService
         $this->googleTableApi = $googleTableApi;
     }
 
-    public function handle()
+    public function handle(): void
     {
         try {
             $users = $this->googleTableApi->getUserData();
             $this->userRepository->saveUsers($users);
             $unique = count(array_unique($users));
             $total = count($users);
-            log_dump("Всего id: $total, уникальных: $unique");
+            log_dump("Загружено всего id: $total, уникальных: $unique", 'UserSyncService');
         }catch (Throwable $e){
-            log_dump("Ошибка при загрузке пользователей: " . $e->getMessage());
+            log_dump("Ошибка при загрузке пользователей: " . $e->getMessage(), 'UserSyncService');
         }
     }
 

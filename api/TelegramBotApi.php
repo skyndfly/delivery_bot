@@ -121,7 +121,7 @@ class TelegramBotApi
 
     public function getImagePath(Collection $photos, $botToken): string
     {
-        $large = $photos[count($photos) - 2];
+        $large = $photos[count($photos) - 1];
         $fileId = $large->getFileId();
         $file = $this->telegram->getFile(['file_id' => $fileId]);
         return "https://api.telegram.org/file/bot{$botToken}/{$file->getFilePath()}";
