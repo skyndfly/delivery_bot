@@ -1,20 +1,17 @@
 <?php
 
-namespace db;
+namespace repositories;
 
+use db\RedisConnection;
 use Predis\Client;
 
-class StepStorage
+class StepRepository
 {
     private Client $redis;
 
     public function __construct()
     {
-        $this->redis = new Client([
-            'scheme' => 'tcp',
-            'host' => 'redis',
-            'port' => 6379,
-        ]);
+        $this->redis = RedisConnection::getInstance();
     }
 
     public function getStep(int $chatId): ?string

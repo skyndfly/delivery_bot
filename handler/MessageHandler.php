@@ -2,19 +2,21 @@
 
 namespace handler;
 
-use api\ApiYandexDisk;
-use api\TelegramBot;
-use db\StepStorage;
+use api\YandexDiskApi;
+use api\TelegramBotApi;
 use enums\StateEnum;
+use repositories\StepRepository;
+use services\AuthorizeService;
 use Telegram\Bot\Objects\Update;
 
 class MessageHandler implements HandlerInterface
 {
 
     public function __construct(
-        private TelegramBot $bot,
-        private StepStorage $redis,
-        private ApiYandexDisk $apiDisk,
+        private TelegramBotApi $bot,
+        private StepRepository $redis,
+        private YandexDiskApi $apiDisk,
+        private readonly AuthorizeService $authorize,
         private string $botToken
     ) {
     }
@@ -25,7 +27,10 @@ class MessageHandler implements HandlerInterface
         $chatId = $message->getChat()->getId();
         $text = $message->getText();
         $step = $this->redis->getStep($chatId);
-
+        if (!$this->authorize->handle($chatId)){
+            $this->bot->actionNoAuthorize($chatId);
+            return;
+        }
         if ($text === "/start" || $text === "/restart") {
             $this->bot->actionStart($chatId);
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECT->value);

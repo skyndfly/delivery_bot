@@ -14,7 +14,10 @@
             "bootstrap\\": "bootstrap/",
             "handler\\": "handler/",
             "components\\": "components/",
-            "enums\\": "enums/"
+            "enums\\": "enums/",
+            "repositories\\": "repositories/",
+            "console\\": "console/",
+            "services\\": "services/"
         }
     },
     "require": {

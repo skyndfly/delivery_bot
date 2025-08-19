@@ -6,7 +6,7 @@ use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
-class TelegramBot
+class TelegramBotApi
 {
     private array $firms;
     private array $address;
@@ -108,6 +108,14 @@ class TelegramBot
         $this->sender->sendText(
             chatId: $chatId,
             text: $this->messages['badUpload']['text']
+        );
+    }
+
+    public function actionNoAuthorize(int $chatId): void
+    {
+        $this->sender->sendText(
+            chatId: $chatId,
+            text: $this->messages['noAuthorize']['text']
         );
     }
 
