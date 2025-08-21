@@ -15,20 +15,19 @@ class WebhookController
     }
 
     /**
-     * POST /api/webhook-add-user
-     * Body: { "id": 123 }
+     * GET /api/webhook-add-user?id={id}
      */
     public function addUser(): void
     {
         try {
-            $data = json_decode(file_get_contents('php://input'), true);
-            if(!isset($data['id'])){
+            $id = $_GET['id'];
+            if(!isset($id)){
                 http_response_code(400);
                 echo json_encode(['error' => 'id is required']);
                 throw new Exception('Ошибка сохранения пользователя');
             }
 
-            $userId = (int) $data['id'];
+            $userId = (int) $id;
             $this->userRepository->addUser($userId);
 
             echo json_encode(['status' => 'ok', 'userId' => $userId]);
