@@ -6,7 +6,6 @@ return [
     'apteka' => 'Аптека.ру',
     'dns' => 'DNS',
     'sunlight' => 'SUNLIGHT',
-    'kids' => 'Детский мир',
     'avito' =>  'Авито',
     '5post' =>  '5post',
     'market' =>  'Яндекс Маркет',

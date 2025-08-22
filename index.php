@@ -90,9 +90,5 @@ try {
     }
     $handle->handle($update);
 } catch (Exception|Error $e) {
-    file_put_contents(
-        "log.txt",
-        (new DateTimeImmutable())->format('d-m-Y-H-i-s') . " Exception: {$e->getMessage()}\n" . " Code: {$e->getCode()}\n",
-        FILE_APPEND
-    );
+    log_dump($e->getMessage());
 }

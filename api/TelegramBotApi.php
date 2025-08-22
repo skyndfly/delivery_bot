@@ -113,15 +113,17 @@ class TelegramBotApi
 
     public function actionNoAuthorize(int $chatId): void
     {
-        $this->sender->sendText(
+        $this->sender->sendPhoto(
             chatId: $chatId,
-            text: $this->messages['noAuthorize']['text']
+            photoPath: $this->messages['noAuthorize']['img'],
+            caption: $this->messages['noAuthorize']['text'],
+            keyboard: []
         );
     }
 
     public function getImagePath(Collection $photos, $botToken): string
     {
-        $large = $photos[count($photos) - 1];
+        $large = $photos->last();
         $fileId = $large->getFileId();
         $file = $this->telegram->getFile(['file_id' => $fileId]);
         return "https://api.telegram.org/file/bot{$botToken}/{$file->getFilePath()}";

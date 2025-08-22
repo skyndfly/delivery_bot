@@ -6,7 +6,6 @@ return [
     'apteka' => './img/apteka.jpg',
     'dns' => './img/dns.jpg',
     'sunlight' => './img/sunlight.jpg',
-    'kids' => './img/detskiy.jpg',
     'avito' => './img/avito.jpg',
     '5post' => './img/5post.jpg',
     'market' => './img/yamarket.jpg',
