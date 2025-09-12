@@ -3,13 +3,13 @@
 namespace api;
 
 use Exception;
-use repositories\UserRepository;
+use repositories\contracts\UserRepositoryContract;
 
 class WebhookController
 {
-    private UserRepository $userRepository;
+    private UserRepositoryContract $userRepository;
 
-    public function __construct(UserRepository $userRepository)
+    public function __construct(UserRepositoryContract $userRepository)
     {
         $this->userRepository = $userRepository;
     }

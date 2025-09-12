@@ -4,8 +4,9 @@ namespace repositories;
 
 use db\RedisConnection;
 use Predis\Client;
+use repositories\contracts\UserRepositoryContract;
 
-class UserRepository
+class UserRedisRepository implements UserRepositoryContract
 {
     private const string KEY = 'users:ids';
     private Client $client;
@@ -35,7 +36,7 @@ class UserRepository
         return $this->client->sismember(self::KEY, (string)$userId);
     }
 
-    private function deleteAll(): void
+    public function deleteAll(): void
     {
         $this->client->del(self::KEY);
     }

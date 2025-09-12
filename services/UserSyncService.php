@@ -3,15 +3,15 @@
 namespace services;
 
 use api\GoogleTableApi;
-use repositories\UserRepository;
+use repositories\contracts\UserRepositoryContract;
 use Throwable;
 
 class UserSyncService
 {
-    private UserRepository $userRepository;
+    private UserRepositoryContract $userRepository;
     private GoogleTableApi $googleTableApi;
 
-    public function __construct(UserRepository $userRepository, GoogleTableApi $googleTableApi)
+    public function __construct(UserRepositoryContract $userRepository, GoogleTableApi $googleTableApi)
     {
         $this->userRepository = $userRepository;
         $this->googleTableApi = $googleTableApi;
@@ -25,6 +25,7 @@ class UserSyncService
             $unique = count(array_unique($users));
             $total = count($users);
             log_dump("Загружено всего id: $total, уникальных: $unique", 'UserSyncService');
+            echo "Загружено всего id: $total, уникальных: $unique\n";
         }catch (Throwable $e){
             log_dump("Ошибка при загрузке пользователей: " . $e->getMessage(), 'UserSyncService');
         }

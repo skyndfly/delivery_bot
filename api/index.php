@@ -1,13 +1,13 @@
 <?php
 
 use api\WebhookController;
-use repositories\UserRepository;
+use repositories\UserMysqlRepository;
 
 require __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ .'/../helpers/functions.php';
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if (isset($_GET['action'])) {
-    $userRepository = new UserRepository();
+    $userRepository = new UserMysqlRepository();
     $controller = new WebhookController(
         userRepository: $userRepository
     );
