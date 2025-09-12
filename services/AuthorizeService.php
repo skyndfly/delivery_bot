@@ -2,13 +2,14 @@
 
 namespace services;
 
-use repositories\UserRepository;
+use repositories\contracts\UserRepositoryContract;
+use repositories\UserRedisRepository;
 
 class AuthorizeService
 {
-    private UserRepository $userRepository;
+    private UserRepositoryContract $userRepository;
 
-    public function __construct(UserRepository $userRepository)
+    public function __construct(UserRepositoryContract $userRepository)
     {
         $this->userRepository = $userRepository;
     }

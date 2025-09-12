@@ -9,8 +9,38 @@ services:
     volumes:
       - ./:/var/www/html
     restart: always
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - bot-network
 
   redis:
     image: redis:7
+    restart: always
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes  # Сохранение данных на диск
+    networks:
+      - bot-network
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - bot-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  bot-network:

@@ -9,7 +9,7 @@ use components\telegram\MessageSender;
 use handler\CallbackQuery;
 use handler\MessageHandler;
 use repositories\StepRepository;
-use repositories\UserRepository;
+use repositories\UserMysqlRepository;
 use services\AuthorizeService;
 use Telegram\Bot\Api;
 
@@ -18,11 +18,10 @@ require_once 'helpers/functions.php';
 
 try {
 
-
     EnvLoader::load();
     $table = new GoogleTableApi($_ENV['TABLE_URL']);
 
-    $userRepository = new UserRepository();
+    $userRepository = new UserMysqlRepository();
 
     $auth = new AuthorizeService($userRepository);
 
@@ -67,7 +66,8 @@ try {
     $apiDisk->createFolder($currentDate->format('d-m-Y'));
     $handle = null;
 
-    if (!$update->getMessage()->getFrom()->getIsBot()) {
+    $message = $update->getMessage();
+    if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
         $handle = new MessageHandler(
             bot: $bot,
             redis: $redis,
