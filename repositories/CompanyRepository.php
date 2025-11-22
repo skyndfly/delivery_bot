@@ -21,7 +21,7 @@ class CompanyRepository
      */
     public function getAll(): array
     {
-        $stmt = $this->connection->query("SELECT name, key FROM " . self::TABLE);
+        $stmt = $this->connection->query("SELECT name, bot_key FROM " . self::TABLE);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(
             callback: fn(array $row) => CompanyDto::fromDbRecord($row),
@@ -34,7 +34,7 @@ class CompanyRepository
         $companies = $this->getAll();
         $result = [];
         foreach ($companies as $dto) {
-            $result[$dto->key] = $dto->name;
+            $result[$dto->botKey] = $dto->name;
         }
         return $result;
     }

@@ -27,7 +27,8 @@ try {
     $companyRepository = new CompanyRepository();
     $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
     $firms = $getCachedCompanyService->execute();
-    if (empty($companies)){
+
+    if (empty($firms)){
         $firms = require_once 'data/firms.php';
     }
 

@@ -28,7 +28,6 @@ class StepRepository
 
     public function setStep(int $chatId, string $step, ?int $ttl = null): void
     {
-        print_dump($chatId);
         $this->cache->get('step_' . $chatId, function (ItemInterface $item) use ($step, $ttl) {
             $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
             return $step;

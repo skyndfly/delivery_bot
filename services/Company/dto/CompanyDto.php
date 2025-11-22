@@ -6,18 +6,18 @@ class CompanyDto
 {
     public function __construct(
         public string $name,
-        public string $key
+        public string $botKey
     ) {
     }
 
     /**
      * @param array{
      *     name: string,
-     *     key: string,
+     *     bot_key: string,
      * } $record
      */
     public static function fromDbRecord(array $record): self
     {
-        return new self(name: $record['name'], key: $record['key']);
+        return new self(name: $record['name'], botKey: $record['bot_key']);
     }
 }

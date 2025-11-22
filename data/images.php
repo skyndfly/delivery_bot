@@ -12,4 +12,5 @@ return [
     'post' => './img/pochta.jpg',
     'vsei' => './img/instrumenti.jpg',
     'dostavka' => './img/dostavka.jpg',
+    'pek' => './img/pek.jpg',
 ];
