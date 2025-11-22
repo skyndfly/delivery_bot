@@ -5,6 +5,7 @@ namespace handler;
 use api\YandexDiskApi;
 use api\TelegramBotApi;
 use DateTimeInterface;
+use DomainException;
 use enums\StateEnum;
 use repositories\StepRepository;
 use services\AuthorizeService;
@@ -27,8 +28,13 @@ class CallbackQuery implements HandlerInterface
         $callbackQuery = $update->get('callback_query');
         $chatId = $callbackQuery->getMessage()->getChat()->getId();
         $data = $callbackQuery->getData();
-        if (!$this->authorize->handle($chatId)){
-            $this->bot->actionNoAuthorize($chatId);
+        try {
+            if (!$this->authorize->handle($chatId, $chatId)) {
+                $this->bot->actionNoAuthorize($chatId);
+                return;
+            }
+        } catch (DomainException $e) {
+            $this->bot->actionSendError($chatId, $e->getMessage());
             return;
         }
         if ($data === 'action_start') {

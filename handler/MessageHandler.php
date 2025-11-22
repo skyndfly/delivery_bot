@@ -4,6 +4,7 @@ namespace handler;
 
 use api\YandexDiskApi;
 use api\TelegramBotApi;
+use DomainException;
 use enums\StateEnum;
 use repositories\StepRepository;
 use services\AuthorizeService;
@@ -27,8 +28,13 @@ class MessageHandler implements HandlerInterface
         $chatId = $message->getChat()->getId();
         $text = $message->getText();
         $step = $this->redis->getStep($chatId);
-        if (!$this->authorize->handle($chatId)){
-            $this->bot->actionNoAuthorize($chatId);
+        try {
+            if (!$this->authorize->handle($chatId, $chatId)) {
+                $this->bot->actionNoAuthorize($chatId);
+                return;
+            }
+        } catch (DomainException $e) {
+            $this->bot->actionSendError($chatId, $e->getMessage());
             return;
         }
         if ($text === "/start" || $text === "/restart") {

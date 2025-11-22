@@ -8,25 +8,30 @@ use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use handler\CallbackQuery;
 use handler\MessageHandler;
+use repositories\CompanyRepository;
 use repositories\StepRepository;
 use repositories\UserMysqlRepository;
 use services\AuthorizeService;
+use services\Company\GetCachedCompanyService;
 use Telegram\Bot\Api;
 
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
 
 try {
-
     EnvLoader::load();
+
     $table = new GoogleTableApi($_ENV['TABLE_URL']);
 
     $userRepository = new UserMysqlRepository();
+    $companyRepository = new CompanyRepository();
+    $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
+    $firms = $getCachedCompanyService->execute();
+    if (empty($companies)){
+        $firms = require_once 'data/firms.php';
+    }
 
     $auth = new AuthorizeService($userRepository);
-
-
-    $firms = require_once 'data/firms.php';
     $address = require_once 'data/address.php';
     $images = require_once 'data/images.php';
     $notes = require_once 'data/notes.php';

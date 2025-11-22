@@ -6,6 +6,7 @@ use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use Illuminate\Support\Collection;
 use Telegram\Bot\Api;
+
 class TelegramBotApi
 {
     private array $firms;
@@ -65,13 +66,13 @@ class TelegramBotApi
 
     }
 
-    public function actionSendError(int $chatId): void
+    public function actionSendError(int $chatId, ?string $customText = null): void
     {
         $this->sender->sendPhoto(
             chatId: $chatId,
             photoPath: $this->messages['error']['img'],
-            caption: $this->messages['error']['text'],
-            keyboard:$this->keyboardBuilder->fromError()
+            caption: $customText === null ? $this->messages['error']['text'] : $customText,
+            keyboard: $this->keyboardBuilder->fromError(),
         );
 
     }
@@ -82,7 +83,7 @@ class TelegramBotApi
             chatId: $chatId,
             photoPath: $this->messages['success']['img'],
             caption: $this->messages['success']['text'],
-            keyboard:$this->keyboardBuilder->fromSuccess()
+            keyboard: $this->keyboardBuilder->fromSuccess()
         );
     }
 
@@ -135,10 +136,11 @@ class TelegramBotApi
             'callback_query_id' => $id,
         ]);
     }
+
     private function getMessageCaption(string $firm): string
     {
         return isset($this->notes[$firm])
-            ? $this->notes[$firm] .$this->messages['point']['text']
+            ? $this->notes[$firm] . $this->messages['point']['text']
             : $this->messages['point']['text'];
     }
 

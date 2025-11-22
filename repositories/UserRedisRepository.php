@@ -6,6 +6,9 @@ use db\RedisConnection;
 use Predis\Client;
 use repositories\contracts\UserRepositoryContract;
 
+/**
+ * @deprecated
+ */
 class UserRedisRepository implements UserRepositoryContract
 {
     private const string KEY = 'users:ids';
@@ -27,13 +30,15 @@ class UserRedisRepository implements UserRepositoryContract
             $this->client->sadd(self::KEY, ...array_map('strval', $users));
         }
     }
+
     public function addUser(int $userId): void
     {
-        $this->client->sadd(self::KEY,[ (string)$userId]);
+        $this->client->sadd(self::KEY, [(string) $userId]);
     }
+
     public function exists(int $userId): bool
     {
-        return $this->client->sismember(self::KEY, (string)$userId);
+        return $this->client->sismember(self::KEY, (string) $userId);
     }
 
     public function deleteAll(): void
