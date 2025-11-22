@@ -2,20 +2,24 @@
 
 namespace db;
 
-use Predis\Client;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class RedisConnection
 {
-    private static ?Client $redis = null;
+    private static ?CacheInterface $redis = null;
 
-    public static function getInstance(): Client
+    public static function getInstance(): CacheInterface
     {
         if (self::$redis === null) {
-            self::$redis = new Client([
-                'scheme' => 'tcp',
-                'host' => 'redis',
-                'port' => 6379,
-            ]);
+            $redisConnection = RedisAdapter::createConnection(
+                'redis://redis:6379'
+            );
+            self::$redis = new RedisAdapter(
+                $redisConnection,
+                $namespace = '',
+                $defaultLifetime = 0
+            );
 
         }
         return self::$redis;
