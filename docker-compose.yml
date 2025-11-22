@@ -14,6 +14,7 @@ services:
       - redis
     networks:
       - bot-network
+      - shared-network
 
   redis:
     image: redis:7
@@ -44,3 +45,5 @@ volumes:
 
 networks:
   bot-network:
+  shared-network:
+    external: true  # используем внешнюю сеть
