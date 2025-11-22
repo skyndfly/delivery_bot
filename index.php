@@ -24,11 +24,11 @@ try {
     $table = new GoogleTableApi($_ENV['TABLE_URL']);
 
     $userRepository = new UserMysqlRepository();
-    $companyRepository = new CompanyRepository();
-    $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
-    $firms = $getCachedCompanyService->execute();
-
-    if (empty($firms)){
+    try {
+        $companyRepository = new CompanyRepository();
+        $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
+        $firms = $getCachedCompanyService->execute();
+    }catch (Throwable){
         $firms = require_once 'data/firms.php';
     }
 
