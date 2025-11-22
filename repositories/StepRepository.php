@@ -28,6 +28,7 @@ class StepRepository
 
     public function setStep(int $chatId, string $step, ?int $ttl = null): void
     {
+        $this->cache->delete('step_' . $chatId); // сначала удаляем старое значение
         $this->cache->get('step_' . $chatId, function (ItemInterface $item) use ($step, $ttl) {
             $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
             return $step;
@@ -42,7 +43,7 @@ class StepRepository
     }
     public function setPath(int $chatId, string $path, ?int $ttl = null): void
     {
-
+        $this->cache->delete('path_' . $chatId); // сначала удаляем старое значение
         $this->cache->get('path_' . $chatId, function (ItemInterface $item) use ($path, $ttl) {
             $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
             return $path;
