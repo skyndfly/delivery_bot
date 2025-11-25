@@ -81,10 +81,12 @@ class MessageHandler implements HandlerInterface
     {
         $tempFile = null;
         // Если не wb и не озон значит загружать на сайт не надо и считаем типа загрузили
+        print_dump($path);
         try {
-            if (mb_stripos($path, 'Wildberries') !== false) {
+            if (mb_stripos($path, 'Wildberries/Молодогвардейцев 25') !== false) {
                 $companyKey = 'wb';
-            } elseif (mb_stripos($path, 'ozon') !== false) {
+
+            } elseif (mb_stripos($path, 'Ozon/Молодогвардейцев 25') !== false) {
                 $companyKey = 'ozon';
             } else {
                 return true;
