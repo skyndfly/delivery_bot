@@ -1,5 +1,6 @@
 <?php
 
+use api\BackApi;
 use api\YandexDiskApi;
 use api\GoogleTableApi;
 use api\TelegramBotApi;
@@ -61,6 +62,7 @@ try {
     );
 
     $apiDisk = new YandexDiskApi($diskToken);
+    $backApi = new BackApi($_ENV['API_BACK']);
 
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
@@ -80,6 +82,7 @@ try {
             apiDisk: $apiDisk,
             authorize: $auth,
             botToken: $botToken,
+            backApi: $backApi,
         );
     } elseif ($update->get('callback_query')) {
         $handle = new CallbackQuery(
