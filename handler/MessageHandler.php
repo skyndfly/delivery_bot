@@ -2,10 +2,12 @@
 
 namespace handler;
 
+use api\BackApi;
 use api\YandexDiskApi;
 use api\TelegramBotApi;
 use DomainException;
 use enums\StateEnum;
+use Exception;
 use repositories\StepRepository;
 use services\AuthorizeService;
 use Telegram\Bot\Objects\Update;
@@ -18,7 +20,8 @@ class MessageHandler implements HandlerInterface
         private StepRepository $redis,
         private YandexDiskApi $apiDisk,
         private readonly AuthorizeService $authorize,
-        private string $botToken
+        private string $botToken,
+        private BackApi $backApi,
     ) {
     }
 
@@ -46,7 +49,16 @@ class MessageHandler implements HandlerInterface
             if ($step === StateEnum::AWAITING_PHOTO->value) {
                 $photos = $message->getPhoto();
                 $url = $this->bot->getImagePath($photos, $this->botToken);
-                if (!$this->apiDisk->uploadFile($url, $this->redis->getPath($chatId))) {
+
+                $path = $this->redis->getPath($chatId);
+
+                //Загружаем фото на яндекс диск
+                $yandexSuccess = $this->apiDisk->uploadFile(url: $url, filePath: $path);
+
+                // Загружаем на бэкенд API
+                $backendSuccess = $this->uploadToBackend(chatId: $chatId, imageUrl: $url, path: $path);
+
+                if (!$yandexSuccess || !$backendSuccess) {
                     $this->bot->actionBadUpload($chatId);
                 } else {
                     $this->bot->actionSuccessDownload($chatId);
@@ -63,4 +75,58 @@ class MessageHandler implements HandlerInterface
         }
 
     }
+
+
+    private function uploadToBackend(int $chatId, string $imageUrl, string $path): bool
+    {
+        $tempFile = null;
+        // Если не wb и не озон значит загружать на сайт не надо и считаем типа загрузили
+        try {
+            if (mb_stripos($path, 'Wildberries') !== false) {
+                $companyKey = 'wb';
+            } elseif (mb_stripos($path, 'ozon') !== false) {
+                $companyKey = 'ozon';
+            } else {
+                return true;
+            }
+
+            // Скачиваем файл из Telegram
+            $fileContent = file_get_contents($imageUrl);
+            if (!$fileContent) {
+                return false;
+            }
+
+            // Создаем временный файл на диске
+            $tempDir = sys_get_temp_dir();
+            $filename = 'tg_photo_' . $chatId . '_' . uniqid() . '.jpg';
+            $tempFile = $tempDir . '/' . $filename;
+
+            // Сохраняем содержимое во временный файл
+            if (file_put_contents($tempFile, $fileContent) === false) {
+                return false;
+            }
+
+            // Проверяем, что файл создан
+            if (!file_exists($tempFile)) {
+                return false;
+            }
+
+            // Отправляем на бэкенд
+            return $this->backApi->uploadCode(
+                companyKey: $companyKey,
+                chatId: (string) $chatId,
+                filePath: $tempFile
+            );
+
+        } catch (Exception $e) {
+            log_dump('Backend upload error: ' . $e->getMessage());
+            return false;
+        } finally {
+            // Удаляем временный файл в любом случае
+            if ($tempFile && file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+        }
+    }
+
 }
