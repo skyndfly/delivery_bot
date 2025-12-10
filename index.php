@@ -7,6 +7,7 @@ use api\TelegramBotApi;
 use bootstrap\EnvLoader;
 use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
+use enums\UploadedCodeStatusEnum;
 use handler\CallbackQuery;
 use handler\MessageHandler;
 use repositories\CompanyRepository;
@@ -19,6 +20,82 @@ use Telegram\Bot\Api;
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
 
+// ---------------------
+//API
+// ---------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issued') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    log_dump($input);
+
+    if (!isset($input['chatId'], $input['status'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'chatId and status required']);
+        exit;
+    }
+
+    EnvLoader::load(); // нужно, чтобы загрузился BOT_TOKEN
+
+    $botToken = $_ENV['BOT_TOKEN'] ?? null;
+
+    if (!$botToken) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Bot token missing']);
+        exit;
+    }
+
+    $telegram = new Api($botToken);
+    $status = UploadedCodeStatusEnum::from($input['status']);
+    if ($status == UploadedCodeStatusEnum::ISSUED) {
+        $text = '📲 Ваш заказ отправленный ' . $input['createdAt'] . ' успешно собран и бережно упакован. 
+
+⚠️В скором времени будет доставлен по адресу:
+
+🏢 г. Антрацит, ул. Петровского 21, 1 этаж, 108 кабинет. 
+
+Ждем Вас✅';
+    } elseif ($status == UploadedCodeStatusEnum::OUTDATED) {
+        $text = '‼️ ВНИМАНИЕ ‼️
+
+📲 Ваш код отправленный ' . $input['createdAt'] . ' УСТАРЕЛ ❌
+
+Вам необходимо сделать следующие действия 👇
+
+1⃣ Зайдите на сайт маркетплейса 
+
+2⃣ Сделайте скрин НОВОГО КОДА 
+
+3⃣ Повторно отправьте в БОТ 
+
+‼️Время приёма кодов ограничено, успейте обновить код до закрытия ‼️';
+    } elseif ($status == UploadedCodeStatusEnum::NOT_PAID) {
+        $text = '‼️ ВНИМАНИЕ ‼️
+
+📲 Ваш код отправленный ' . $input['createdAt'] . ' НЕ ОПЛАЧЕН ❌
+
+Вам необходимо сделать следующие действия 👇
+
+1⃣ Зайдите на сайт маркетплейса 
+
+2⃣ Оплатите товары самостоятельно 
+
+3⃣Сделайте скрин НОВОГО КОДА 
+
+4⃣ Повторно отправьте в БОТ 
+
+‼️Время приёма кодов ограничено, успейте обновить код до закрытия ‼️';
+    }
+    $telegram->sendMessage([
+        'chat_id' => $input['chatId'],
+        'text' => $text,
+    ]);
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+// ---------------------
+// API
+// -
+
 try {
     EnvLoader::load();
 
@@ -29,7 +106,7 @@ try {
         $companyRepository = new CompanyRepository();
         $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
         $firms = $getCachedCompanyService->execute();
-    }catch (Throwable){
+    } catch (Throwable) {
         $firms = require_once 'data/firms.php';
     }
 
