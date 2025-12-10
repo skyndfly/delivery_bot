@@ -87,7 +87,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
     $telegram->sendMessage([
         'chat_id' => $input['chatId'],
         'text' => $text,
+        'reply_markup' => json_encode([
+            'inline_keyboard' => [
+                [
+                    [
+                        'text' => 'Добавить код ✅',
+                        'callback_data' => '/start'
+                    ]
+                ]
+            ]
+        ])
     ]);
+
 
     echo json_encode(['ok' => true]);
     exit;
