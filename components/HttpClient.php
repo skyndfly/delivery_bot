@@ -4,7 +4,6 @@ namespace components;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Telegram\Bot\HttpClients\HttpClientInterface;
@@ -49,9 +48,15 @@ class HttpClient implements HttpClientInterface
 
             return $this->client->request($method, $url, $guzzleOptions);
         } catch (GuzzleException $e) {
-            // логируем ошибку для дебага
-            error_log('HttpClient send error: ' . $e->getMessage());
-            return null;
+            // логируем ошибку
+            log_dump('HttpClient send error: ' . $e->getMessage());
+
+            // создаём фиктивный ответ, чтобы SDK не падал
+            return new Response(500, [], json_encode([
+                'ok' => false,
+                'error_code' => 500,
+                'description' => $e->getMessage()
+            ]));
         }
     }
 
