@@ -56,10 +56,7 @@ class MessageHandler implements HandlerInterface
                 $yandexSuccess = $this->apiDisk->uploadFile(url: $url, filePath: $path);
 
                 // Загружаем на бэкенд API
-                $start = microtime(true);
                 $backendSuccess = $this->uploadToBackend(chatId: $chatId, imageUrl: $url, path: $path);
-                $end = microtime(true);
-                log_dump('BackApi method: ' . ($end - $start) . ' sec');
                 if (!$yandexSuccess || !$backendSuccess) {
                     $this->bot->actionBadUpload($chatId);
                 } else {

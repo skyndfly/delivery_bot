@@ -161,11 +161,12 @@ try {
         sender: $telegramMessageSender
     );
 
-    $apiDisk = new YandexDiskApi($diskToken);
     $start = microtime(true);
-    $backApi = new BackApi($_ENV['API_BACK']);
+    $apiDisk = new YandexDiskApi($diskToken);
     $end = microtime(true);
-    log_dump('BackApi: ' . ($end - $start) . ' sec');
+    log_dump('YandexDiskApi: ' . ($end - $start) . ' sec');
+    $backApi = new BackApi($_ENV['API_BACK']);
+
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
 
