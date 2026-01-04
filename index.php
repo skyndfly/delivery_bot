@@ -8,17 +8,12 @@ use bootstrap\EnvLoader;
 use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use enums\UploadedCodeStatusEnum;
-use GuzzleHttp\Client;
 use handler\CallbackQuery;
 use handler\MessageHandler;
-use repositories\CompanyRepository;
 use repositories\StepRepository;
 use repositories\UserMysqlRepository;
 use services\AuthorizeService;
-use services\Company\GetCachedCompanyService;
 use Telegram\Bot\Api;
-use Telegram\Bot\HttpClients\GuzzleHttpClient;
-use Telegram\Bot\HttpClients\HttpClientInterface;
 
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
@@ -116,16 +111,13 @@ try {
     $table = new GoogleTableApi($_ENV['TABLE_URL']);
 
     $userRepository = new UserMysqlRepository();
-    try {
-        $companyRepository = new CompanyRepository();
-        $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
-        $start = microtime(true);
-        $firms = $getCachedCompanyService->execute();
-        $end = microtime(true);
-        log_dump('GetCachedCompanyService execute: ' . ($end - $start) . ' sec');
-    } catch (Throwable) {
+//    try {
+//        $companyRepository = new CompanyRepository();
+//        $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
+//        $firms = $getCachedCompanyService->execute();
+//    } catch (Throwable) {
         $firms = require_once 'data/firms.php';
-    }
+//    }
 
     $auth = new AuthorizeService($userRepository);
     $address = require_once 'data/address.php';
@@ -139,17 +131,17 @@ try {
     if ($botToken === null) {
         throw new Exception('BotToken not defined');
     }
-
-    $guzzle = new Client([
-        'timeout' => 10,
-        'connect_timeout' => 5,
-        'curl' => [
-            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-        ],
-    ]);
+//
+//    $guzzle = new Client([
+//        'timeout' => 10,
+//        'connect_timeout' => 5,
+//        'curl' => [
+//            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+//        ],
+//    ]);
     $telegram = new Api($botToken);
-    $telegram->setHttpClientHandler(
-        new GuzzleHttpClient($guzzle));
+//    $telegram->setHttpClientHandler(
+//        new GuzzleHttpClient($guzzle));
     $redis = new StepRepository();
     $keyBoardBuilder = new KeyBoardBuilder();
     $telegramMessageSender = new MessageSender($telegram);
@@ -173,15 +165,11 @@ try {
     $tz = new DateTimeZone('Europe/Moscow');
     $currentDate = new DateTimeImmutable('now', $tz);
 
-    $start = microtime(true);
     $apiDisk->createFolder($currentDate->format('d-m-Y'));
-    $end = microtime(true);
-    log_dump('YandexDisk createFolder: ' . ($end - $start) . ' sec');
     $handle = null;
 
     $message = $update->getMessage();
     if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
-        $start = microtime(true);
         $handle = new MessageHandler(
             bot: $bot,
             redis: $redis,
@@ -190,10 +178,7 @@ try {
             botToken: $botToken,
             backApi: $backApi,
         );
-        $end = microtime(true);
-        log_dump('Первый if' . ($end - $start) . ' sec');
     } elseif ($update->get('callback_query')) {
-        $start = microtime(true);
         $handle = new CallbackQuery(
             bot: $bot,
             redis: $redis,
@@ -202,8 +187,6 @@ try {
             authorize: $auth,
             firms: $firms,
         );
-        $end = microtime(true);
-        log_dump('callback_query' . ($end - $start) . ' sec');
     }
     if ($handle === null) {
         throw new DomainException('Handle not set');
