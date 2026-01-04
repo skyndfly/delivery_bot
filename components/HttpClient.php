@@ -11,8 +11,8 @@ use Telegram\Bot\HttpClients\HttpClientInterface;
 class HttpClient implements HttpClientInterface
 {
     private Client $client;
-    private int $timeout = 10;         // сек
-    private int $connectTimeout = 5;   // сек
+    private int $timeout = 60;         // сек
+    private int $connectTimeout = 10;   // сек
 
     public function __construct(array $guzzleConfig = [])
     {
