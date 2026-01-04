@@ -17,7 +17,10 @@ use Telegram\Bot\Api;
 
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
-
+$start = microtime(true);
+file_get_contents('https://api.telegram.org/bot'.$_ENV['BOT_TOKEN'].'/getMe');
+$end = microtime(true);
+log_dump("Response time: " . ($end - $start) . " sec\n");
 // ---------------------
 //API
 // ---------------------
