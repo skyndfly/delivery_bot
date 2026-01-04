@@ -166,7 +166,13 @@ try {
 
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
-
+    if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
+        $telegram->sendMessage([
+            'chat_id' => $message->getChat()->getId(),
+            'text' => "Привет, бот живой ✅",
+        ]);
+        exit;
+    }
     $tz = new DateTimeZone('Europe/Moscow');
     $currentDate = new DateTimeImmutable('now', $tz);
 
