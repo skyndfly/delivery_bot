@@ -8,6 +8,7 @@ use bootstrap\EnvLoader;
 use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use enums\UploadedCodeStatusEnum;
+use GuzzleHttp\Client;
 use handler\CallbackQuery;
 use handler\MessageHandler;
 use repositories\CompanyRepository;
@@ -16,6 +17,8 @@ use repositories\UserMysqlRepository;
 use services\AuthorizeService;
 use services\Company\GetCachedCompanyService;
 use Telegram\Bot\Api;
+use Telegram\Bot\HttpClients\GuzzleHttpClient;
+use Telegram\Bot\HttpClients\HttpClientInterface;
 
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
@@ -134,7 +137,16 @@ try {
         throw new Exception('BotToken not defined');
     }
 
+    $guzzle = new Client([
+        'timeout' => 10,
+        'connect_timeout' => 5,
+        'curl' => [
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+        ],
+    ]);
     $telegram = new Api($botToken);
+    $telegram->setHttpClientHandler(
+        new GuzzleHttpClient($guzzle));
     $redis = new StepRepository();
     $keyBoardBuilder = new KeyBoardBuilder();
     $telegramMessageSender = new MessageSender($telegram);

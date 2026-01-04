@@ -11,16 +11,31 @@ RUN apt-get update && apt-get install -y tzdata
 ENV TZ=Europe/Moscow
 RUN echo "date.timezone = Europe/Moscow" > /usr/local/etc/php/conf.d/timezone.ini
 
+# Системные зависимости
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
+    libpq-dev \
+    libcurl4-openssl-dev \
     zip \
     unzip \
-    libzip-dev \
-    libpq-dev
-RUN docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd zip \
-     pdo_pgsql pgsql
+    && rm -rf /var/lib/apt/lists/*
+
+# PHP extensions (ВАЖНО: curl добавлен)
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mysqli \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    pdo_pgsql \
+    pgsql \
+    curl
 RUN apt-get update && apt-get install -y curl unzip && \
     curl -sS https://getcomposer.org/installer -o composer-setup.php \
      && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
