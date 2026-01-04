@@ -167,6 +167,7 @@ try {
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
     if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
+        // мгновенный ответ
         $telegram->sendMessage([
             'chat_id' => $message->getChat()->getId(),
             'text' => "Привет, бот живой ✅",
