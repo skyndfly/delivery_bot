@@ -32,7 +32,7 @@ class MessageHandler implements HandlerInterface
         $text = $message->getText();
         $start = microtime(true);
         $step = $this->redis->getStep($chatId);
-        log_dump('$this->redis->getStep - ' . (microtime(true) - $start));
+        log_dump('this->redis->getStep - ' . (microtime(true) - $start));
         try {
             if (!$this->authorize->handle($chatId, $chatId)) {
                 $this->bot->actionNoAuthorize($chatId);
