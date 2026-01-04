@@ -30,9 +30,7 @@ class MessageHandler implements HandlerInterface
         $message = $update->getMessage();
         $chatId = $message->getChat()->getId();
         $text = $message->getText();
-        $start = microtime(true);
         $step = $this->redis->getStep($chatId);
-        log_dump('this->redis->getStep - ' . (microtime(true) - $start));
         try {
             if (!$this->authorize->handle($chatId, $chatId)) {
                 $this->bot->actionNoAuthorize($chatId);
@@ -58,8 +56,10 @@ class MessageHandler implements HandlerInterface
                 $yandexSuccess = $this->apiDisk->uploadFile(url: $url, filePath: $path);
 
                 // Загружаем на бэкенд API
+                $start = microtime(true);
                 $backendSuccess = $this->uploadToBackend(chatId: $chatId, imageUrl: $url, path: $path);
-
+                $end = microtime(true);
+                log_dump('BackApi method: ' . ($end - $start) . ' sec');
                 if (!$yandexSuccess || !$backendSuccess) {
                     $this->bot->actionBadUpload($chatId);
                 } else {
@@ -116,6 +116,7 @@ class MessageHandler implements HandlerInterface
             }
 
             // Отправляем на бэкенд
+
             return $this->backApi->uploadCode(
                 companyKey: $companyKey,
                 chatId: (string) $chatId,

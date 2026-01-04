@@ -162,8 +162,10 @@ try {
     );
 
     $apiDisk = new YandexDiskApi($diskToken);
+    $start = microtime(true);
     $backApi = new BackApi($_ENV['API_BACK']);
-
+    $end = microtime(true);
+    log_dump('BackApi: ' . ($end - $start) . ' sec');
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
 
