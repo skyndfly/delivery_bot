@@ -41,6 +41,7 @@ class MessageHandler implements HandlerInterface
             return;
         }
         if ($text === "/start" || $text === "/restart") {
+            log_dump('старт прожат');
             $this->bot->actionStart($chatId);
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
         } elseif (!$message->has('photo') && $step === StateEnum::AWAITING_PHOTO->value) {
