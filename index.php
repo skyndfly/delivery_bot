@@ -135,20 +135,20 @@ try {
         throw new Exception('BotToken not defined');
     }
 
-    $guzzle = new Client([
-        'timeout' => 10,
-        'connect_timeout' => 5,
-        'curl' => [
-            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-        ],
-    ]);
+//    $guzzle = new Client([
+//        'timeout' => 10,
+//        'connect_timeout' => 5,
+//        'curl' => [
+//            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+//        ],
+//    ]);
     $telegram = new Api($botToken);
 
 //    $telegram->setHttpClientHandler(
 //        new HttpClient()
 //    );
-    $telegram->setHttpClientHandler(
-        new GuzzleHttpClient($guzzle));
+//    $telegram->setHttpClientHandler(
+//        new GuzzleHttpClient($guzzle));
     $redis = new StepRepository();
     $keyBoardBuilder = new KeyBoardBuilder();
     $telegramMessageSender = new MessageSender($telegram);
