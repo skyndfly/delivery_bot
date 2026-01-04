@@ -119,7 +119,10 @@ try {
     try {
         $companyRepository = new CompanyRepository();
         $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
+        $start = microtime(true);
         $firms = $getCachedCompanyService->execute();
+        $end = microtime(true);
+        log_dump('GetCachedCompanyService execute: ' . ($end - $start) . ' sec');
     } catch (Throwable) {
         $firms = require_once 'data/firms.php';
     }
@@ -166,23 +169,19 @@ try {
 
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();
-    if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
-        // мгновенный ответ
-        $telegram->sendMessage([
-            'chat_id' => $message->getChat()->getId(),
-            'text' => "Привет, бот живой ✅",
-        ]);
-        exit;
-    }
+
     $tz = new DateTimeZone('Europe/Moscow');
     $currentDate = new DateTimeImmutable('now', $tz);
 
-
+    $start = microtime(true);
     $apiDisk->createFolder($currentDate->format('d-m-Y'));
+    $end = microtime(true);
+    log_dump('YandexDisk createFolder: ' . ($end - $start) . ' sec');
     $handle = null;
 
     $message = $update->getMessage();
     if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
+        $start = microtime(true);
         $handle = new MessageHandler(
             bot: $bot,
             redis: $redis,
@@ -191,7 +190,10 @@ try {
             botToken: $botToken,
             backApi: $backApi,
         );
+        $end = microtime(true);
+        log_dump('Первый if' . ($end - $start) . ' sec');
     } elseif ($update->get('callback_query')) {
+        $start = microtime(true);
         $handle = new CallbackQuery(
             bot: $bot,
             redis: $redis,
@@ -200,6 +202,8 @@ try {
             authorize: $auth,
             firms: $firms,
         );
+        $end = microtime(true);
+        log_dump('callback_query' . ($end - $start) . ' sec');
     }
     if ($handle === null) {
         throw new DomainException('Handle not set');
