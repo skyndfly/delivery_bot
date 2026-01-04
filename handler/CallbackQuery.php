@@ -39,17 +39,23 @@ class CallbackQuery implements HandlerInterface
         }
         if ($data === 'action_start') {
             $this->bot->actionStart($chatId);
+            $start = microtime(true);
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
+            log_dump('this->redis->setStep - ' . (microtime(true) - $start));
             $this->bot->answerCallback($callbackQuery->getId());
         } elseif ($data === 'action_end') {
             $this->bot->actionEnd($chatId);
+            $start = microtime(true);
             $this->redis->setStep($chatId, StateEnum::PAUSE->value);
+            log_dump('this->redis->setStep - ' . (microtime(true) - $start));
             $this->bot->answerCallback($callbackQuery->getId());
         } elseif (str_starts_with($data, 'firm|')) {
             $firm = substr($data, strlen('firm|'));
             $this->apiDisk->createFolder($this->currentDate->format('d-m-Y') . '/' . $this->firms[$firm]);
             $this->bot->actionSelectedFirm($firm, $chatId);
+            $start = microtime(true);
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECTED->value);
+            log_dump('this->redis->setStep - ' . (microtime(true) - $start));
             $this->bot->answerCallback($callbackQuery->getId());
         } elseif (str_starts_with($data, 'address|')) {
             [, $firm, $address] = explode('|', $data, 3);
@@ -57,7 +63,9 @@ class CallbackQuery implements HandlerInterface
             $this->apiDisk->createFolder($path);
             $this->bot->actionSelectedAddress($chatId);
             $this->redis->setPath($chatId, $path);
+            $start = microtime(true);
             $this->redis->setStep($chatId, StateEnum::AWAITING_PHOTO->value);
+            log_dump('this->redis->setStep - ' . (microtime(true) - $start));
             $this->bot->answerCallback($callbackQuery->getId());
         }
     }
