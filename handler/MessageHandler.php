@@ -84,6 +84,7 @@ class MessageHandler implements HandlerInterface
 
     private function uploadToBackend(int $chatId, string $imageUrl, string $path): bool
     {
+        return true;
         $tempFile = null;
         // Если не wb и не озон значит загружать на сайт не надо и считаем типа загрузили
         try {
