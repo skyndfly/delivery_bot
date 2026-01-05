@@ -11,6 +11,7 @@ use Exception;
 use repositories\StepRepository;
 use services\AuthorizeService;
 use Telegram\Bot\Objects\Update;
+use Throwable;
 
 class MessageHandler implements HandlerInterface
 {
@@ -41,10 +42,7 @@ class MessageHandler implements HandlerInterface
             return;
         }
         if ($text === "/start" || $text === "/restart") {
-            log_dump('старт прожат');
-            log_dump('начало старта');
             $this->bot->actionStart($chatId);
-            log_dump('конец старта ');
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECT->value);
         } elseif (!$message->has('photo') && $step === StateEnum::AWAITING_PHOTO->value) {
             $this->bot->actionSendError($chatId);
@@ -59,7 +57,12 @@ class MessageHandler implements HandlerInterface
                 $yandexSuccess = $this->apiDisk->uploadFile(url: $url, filePath: $path);
 
                 // Загружаем на бэкенд API
-                $backendSuccess = $this->uploadToBackend(chatId: $chatId, imageUrl: $url, path: $path);
+                //TODO на время убираем загрузку на сайт
+                try {
+                    $backendSuccess = $this->uploadToBackend(chatId: $chatId, imageUrl: $url, path: $path);
+                } catch (Throwable) {
+                    $backendSuccess = true;
+                }
                 if (!$yandexSuccess || !$backendSuccess) {
                     $this->bot->actionBadUpload($chatId);
                 } else {
@@ -83,7 +86,6 @@ class MessageHandler implements HandlerInterface
     {
         $tempFile = null;
         // Если не wb и не озон значит загружать на сайт не надо и считаем типа загрузили
-        print_dump($path);
         try {
             if (mb_stripos($path, 'Wildberries/Молодогвардейцев 25') !== false) {
                 $companyKey = 'wb';
