@@ -22,12 +22,12 @@ class AuthorizeService
 
     public function handle(int $userId, $chatId): bool
     {
-        //        if(in_array($chatId, $this->whiteList)){
-        //            return true;
-        //        }
-        //        if (!$this->isServiceAvailable()){
-        //            throw new DomainException('Сервис недоступен в период с 16:00 до 23:59');
-        //        }
+        if (in_array($chatId, $this->whiteList)) {
+            return true;
+        }
+        if (!$this->isServiceAvailable()) {
+            throw new DomainException('Сервис недоступен в период с 16:00 до 23:59');
+                }
         return $this->userRepository->exists($userId);
     }
 
