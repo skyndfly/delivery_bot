@@ -26,7 +26,7 @@ class AuthorizeService
             return true;
         }
         if (!$this->isServiceAvailable()) {
-            throw new DomainException('Сервис недоступен в период с 16:00 до 23:59');
+            throw new DomainException('Сервис недоступен в период с 12:00 до 23:59');
                 }
         return $this->userRepository->exists($userId);
     }
@@ -39,8 +39,8 @@ class AuthorizeService
 
         // Текущее время в минутах от начала дня
         $currentTimeMinutes = $currentHour * 60 + $currentMinute;
-        // Проверяем период с 16:00 (960 минут) до 23:59 (1439 минут)
-        return $currentTimeMinutes < 16 * 60 || $currentTimeMinutes > 23 * 60 + 59;
+        // Проверяем период с 12:00 (720 минут) до 23:59 (1439 минут)
+        return $currentTimeMinutes < 12 * 60 || $currentTimeMinutes > 23 * 60 + 59;
     }
 
 }
