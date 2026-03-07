@@ -12,6 +12,7 @@ use enums\UploadedCodeStatusEnum;
 use GuzzleHttp\Client;
 use handler\CallbackQuery;
 use handler\MessageHandler;
+use repositories\BotCacheRepository;
 use repositories\StepRepository;
 use repositories\UserMysqlRepository;
 use services\AuthorizeService;
@@ -104,6 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
     echo json_encode(['ok' => true]);
     exit;
 }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/cache/clear') {
+    $cache = new BotCacheRepository();
+    $cache->clearAll();
+    echo json_encode(['ok' => true]);
+    exit;
+}
 // ---------------------
 // API
 // -
@@ -120,18 +127,30 @@ try {
     //        $firms = $getCachedCompanyService->execute();
     //    } catch (Throwable) {
     $backApi = new BackApi($_ENV['API_BACK']);
-    try {
-        $botData = $backApi->getBotData();
-        $firms = $botData['firms'];
-        $address = $botData['address'];
-    } catch (Throwable $e) {
-        log_dump($e->getMessage());
-        $firms = require_once 'data/firms.php';
-        $address = require_once 'data/address.php';
+    $botCache = new BotCacheRepository();
+    $cachedBotData = $botCache->getBotData();
+    if ($cachedBotData !== null) {
+        $firms = $cachedBotData['firms'];
+        $address = $cachedBotData['address'];
+    } else {
+        try {
+            $botData = $backApi->getBotData();
+            $firms = $botData['firms'];
+            $address = $botData['address'];
+            $botCache->setBotData($botData);
+        } catch (Throwable $e) {
+            log_dump($e->getMessage());
+            $firms = require_once 'data/firms.php';
+            $address = require_once 'data/address.php';
+            $botCache->setBotData([
+                'firms' => $firms,
+                'address' => $address,
+            ]);
+        }
     }
     //    }
 
-    $auth = new AuthorizeService($userRepository, $backApi);
+    $auth = new AuthorizeService($userRepository, $backApi, $botCache);
     if (!isset($address)) {
         $address = require_once 'data/address.php';
     }

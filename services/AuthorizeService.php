@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use DomainException;
 use api\BackApi;
+use repositories\BotCacheRepository;
 use repositories\contracts\UserRepositoryContract;
 
 class AuthorizeService
@@ -16,7 +17,7 @@ class AuthorizeService
 //        595913846
     ];
 
-    public function __construct(UserRepositoryContract $userRepository, private BackApi $backApi)
+    public function __construct(UserRepositoryContract $userRepository, private BackApi $backApi, private BotCacheRepository $botCacheRepository)
     {
         $this->userRepository = $userRepository;
     }
@@ -49,11 +50,16 @@ class AuthorizeService
     private function getCutoffHour(): int
     {
         try {
+            $cached = $this->botCacheRepository->getCutoffHour();
+            if ($cached !== null) {
+                return $cached;
+            }
             $settings = $this->backApi->getBotSettings();
             $hour = (int) ($settings['cutoffHour'] ?? 16);
             if ($hour < 0 || $hour > 23) {
                 return 16;
             }
+            $this->botCacheRepository->setCutoffHour($hour);
             return $hour;
         } catch (\Throwable) {
             return 16;
