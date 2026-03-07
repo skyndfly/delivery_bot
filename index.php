@@ -47,8 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
 
     $telegram = new Api($botToken);
     $status = UploadedCodeStatusEnum::from($input['status']);
+    $companyName = $input['companyName'] ?? null;
+    $address = $input['address'] ?? null;
+    $placeLabel = null;
+    if (!empty($companyName) || !empty($address)) {
+        $parts = array_filter([$companyName, $address], fn($value) => is_string($value) && $value !== '');
+        $placeLabel = implode(' — ', $parts);
+    }
+    $placeLine = $placeLabel !== null ? "🏢 {$placeLabel}.\n" : '🏢 Адрес уточняется.' . "\n";
     if ($status == UploadedCodeStatusEnum::ISSUED) {
-        $text = '📲 Ваш заказ отправленный ' . $input['createdAt'] . ' успешно собран и бережно упакован. 
+        $text = '📲 Ваш заказ отправленный ' . $placeLine.' в ' .$input['createdAt'] . ' успешно собран и бережно упакован. 
 
 ⚠️В скором времени будет доставлен по адресу:
 
@@ -58,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
     } elseif ($status == UploadedCodeStatusEnum::OUTDATED) {
         $text = '‼️ ВНИМАНИЕ ‼️
 
-📲 Ваш код отправленный ' . $input['createdAt'] . ' УСТАРЕЛ ❌
+📲 Ваш код отправленный ' . $placeLine.' в ' . $input['createdAt'] . ' УСТАРЕЛ ❌
+
+🏢 г. Антрацит, ул. Петровского 21, 1 этаж, 108 кабинет. 
 
 Вам необходимо сделать следующие действия 👇
 
@@ -72,7 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
     } elseif ($status == UploadedCodeStatusEnum::NOT_PAID) {
         $text = '‼️ ВНИМАНИЕ ‼️
 
-📲 Ваш код отправленный ' . $input['createdAt'] . ' НЕ ОПЛАЧЕН ❌
+📲 Ваш код отправленный ' . $placeLine.' в ' . $input['createdAt'] . ' НЕ ОПЛАЧЕН ❌
+
+🏢 г. Антрацит, ул. Петровского 21, 1 этаж, 108 кабинет. 
 
 Вам необходимо сделать следующие действия 👇
 
