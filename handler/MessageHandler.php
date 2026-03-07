@@ -82,15 +82,24 @@ class MessageHandler implements HandlerInterface
     private function uploadToBackend(int $chatId, string $imageUrl, string $path): bool
     {
         $tempFile = null;
-        // Если не wb и не озон значит загружать на сайт не надо и считаем типа загрузили
         try {
-            if (mb_stripos($path, 'Wildberries/Молодогвардейцев 25') !== false) {
-                $companyKey = 'wb';
+            $companyKey = $this->redis->getFirm($chatId);
+            $addressId = $this->redis->getAddressId($chatId);
+            $addressLabel = $this->redis->getAddressLabel($chatId);
 
-            } elseif (mb_stripos($path, 'Ozon/Молодогвардейцев 25') !== false) {
-                $companyKey = 'ozon';
-            } else {
-                return true;
+            if ($companyKey === null) {
+                if (mb_stripos($path, 'Wildberries/') !== false) {
+                    $companyKey = 'wb';
+                } elseif (mb_stripos($path, 'Ozon/') !== false) {
+                    $companyKey = 'ozon';
+                }
+            }
+            if ($addressLabel === null && str_contains($path, '/')) {
+                $parts = explode('/', $path);
+                $addressLabel = end($parts) ?: null;
+            }
+            if ($companyKey === null) {
+                return false;
             }
 
             // Скачиваем файл из Telegram
@@ -119,7 +128,9 @@ class MessageHandler implements HandlerInterface
             return $this->backApi->uploadCode(
                 companyKey: $companyKey,
                 chatId: (string) $chatId,
-                filePath: $tempFile
+                filePath: $tempFile,
+                addressId: $addressId,
+                address: $addressLabel
             );
 
         } catch (Exception $e) {

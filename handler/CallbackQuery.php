@@ -50,13 +50,27 @@ class CallbackQuery implements HandlerInterface
             $this->apiDisk->createFolder($this->currentDate->format('d-m-Y') . '/' . $this->firms[$firm]);
             $this->bot->actionSelectedFirm($firm, $chatId);
             $this->redis->setStep($chatId, StateEnum::FIRM_SELECTED->value);
+            $this->redis->setFirm($chatId, $firm);
             $this->bot->answerCallback($callbackQuery->getId());
         } elseif (str_starts_with($data, 'address|')) {
-            [, $firm, $address] = explode('|', $data, 3);
+            $parts = explode('|', $data, 4);
+            $firm = $parts[1] ?? '';
+            $addressId = null;
+            $address = $parts[2] ?? '';
+            if (isset($parts[3])) {
+                $addressId = ctype_digit($parts[2]) ? (int) $parts[2] : null;
+                $address = $parts[3];
+            }
             $path = $this->currentDate->format('d-m-Y') . '/' . $this->firms[$firm] . '/' . $address;
             $this->apiDisk->createFolder($path);
             $this->bot->actionSelectedAddress($chatId);
             $this->redis->setPath($chatId, $path);
+            if ($addressId !== null) {
+                $this->redis->setAddressId($chatId, $addressId);
+            }
+            if ($address !== '') {
+                $this->redis->setAddressLabel($chatId, $address);
+            }
             $this->redis->setStep($chatId, StateEnum::AWAITING_PHOTO->value);
             $this->bot->answerCallback($callbackQuery->getId());
         }

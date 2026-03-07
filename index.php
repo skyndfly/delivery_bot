@@ -119,11 +119,22 @@ try {
     //        $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
     //        $firms = $getCachedCompanyService->execute();
     //    } catch (Throwable) {
-    $firms = require_once 'data/firms.php';
+    $backApi = new BackApi($_ENV['API_BACK']);
+    try {
+        $botData = $backApi->getBotData();
+        $firms = $botData['firms'];
+        $address = $botData['address'];
+    } catch (Throwable $e) {
+        log_dump($e->getMessage());
+        $firms = require_once 'data/firms.php';
+        $address = require_once 'data/address.php';
+    }
     //    }
 
     $auth = new AuthorizeService($userRepository);
-    $address = require_once 'data/address.php';
+    if (!isset($address)) {
+        $address = require_once 'data/address.php';
+    }
     $images = require_once 'data/images.php';
     $notes = require_once 'data/notes.php';
     $telegramMessages = require_once 'messages/telegram.php';
@@ -164,7 +175,9 @@ try {
     );
 
     $apiDisk = new YandexDiskApi($diskToken);
-    $backApi = new BackApi($_ENV['API_BACK']);
+    if (!isset($backApi)) {
+        $backApi = new BackApi($_ENV['API_BACK']);
+    }
 
     $update = $telegram->getWebhookUpdate();
     $message = $update->getMessage();

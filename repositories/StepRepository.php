@@ -49,4 +49,55 @@ class StepRepository
             return $path;
         });
     }
+
+    public function getFirm(int $chatId): ?string
+    {
+        return $this->cache->get('firm_' . $chatId, function (ItemInterface $item) {
+            $item->expiresAfter(self::DEFAULT_TTL);
+            return null;
+        });
+    }
+
+    public function setFirm(int $chatId, string $firm, ?int $ttl = null): void
+    {
+        $this->cache->delete('firm_' . $chatId);
+        $this->cache->get('firm_' . $chatId, function (ItemInterface $item) use ($firm, $ttl) {
+            $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
+            return $firm;
+        });
+    }
+
+    public function getAddressId(int $chatId): ?int
+    {
+        return $this->cache->get('address_id_' . $chatId, function (ItemInterface $item) {
+            $item->expiresAfter(self::DEFAULT_TTL);
+            return null;
+        });
+    }
+
+    public function setAddressId(int $chatId, int $addressId, ?int $ttl = null): void
+    {
+        $this->cache->delete('address_id_' . $chatId);
+        $this->cache->get('address_id_' . $chatId, function (ItemInterface $item) use ($addressId, $ttl) {
+            $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
+            return $addressId;
+        });
+    }
+
+    public function getAddressLabel(int $chatId): ?string
+    {
+        return $this->cache->get('address_label_' . $chatId, function (ItemInterface $item) {
+            $item->expiresAfter(self::DEFAULT_TTL);
+            return null;
+        });
+    }
+
+    public function setAddressLabel(int $chatId, string $label, ?int $ttl = null): void
+    {
+        $this->cache->delete('address_label_' . $chatId);
+        $this->cache->get('address_label_' . $chatId, function (ItemInterface $item) use ($label, $ttl) {
+            $item->expiresAfter($ttl ?? self::DEFAULT_TTL);
+            return $label;
+        });
+    }
 }

@@ -22,10 +22,23 @@ class KeyBoardBuilder
     {
 
         return array_map(
-            fn($label) => [[
-                'text' => $label,
-                'callback_data' => 'address|' . $firm . '|' . $label,
-            ]],
+            function ($item) use ($firm) {
+                if (is_array($item)) {
+                    $label = $item['address'] ?? '';
+                    $id = $item['id'] ?? null;
+                } else {
+                    $label = $item;
+                    $id = null;
+                }
+                $callback = $id === null
+                    ? 'address|' . $firm . '|' . $label
+                    : 'address|' . $firm . '|' . $id . '|' . $label;
+
+                return [[
+                    'text' => $label,
+                    'callback_data' => $callback,
+                ]];
+            },
             $addresses
         );
     }
