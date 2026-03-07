@@ -5,17 +5,18 @@ namespace services;
 use DateTimeImmutable;
 use DateTimeZone;
 use DomainException;
+use api\BackApi;
 use repositories\contracts\UserRepositoryContract;
 
 class AuthorizeService
 {
     private UserRepositoryContract $userRepository;
     private array $whiteList = [
-        1535637656,
-        595913846
+//        1535637656,
+//        595913846
     ];
 
-    public function __construct(UserRepositoryContract $userRepository)
+    public function __construct(UserRepositoryContract $userRepository, private BackApi $backApi)
     {
         $this->userRepository = $userRepository;
     }
@@ -26,7 +27,9 @@ class AuthorizeService
             return true;
         }
         if (!$this->isServiceAvailable()) {
-            throw new DomainException('Сервис недоступен в период с 16:00 до 23:59');
+            $hour = $this->getCutoffHour();
+            $hourLabel = str_pad((string) $hour, 2, '0', STR_PAD_LEFT);
+            throw new DomainException("Сервис недоступен в период с {$hourLabel}:00 до 23:59");
         }
         return $this->userRepository->exists($userId);
     }
@@ -37,10 +40,23 @@ class AuthorizeService
         $currentHour = (int) $currentTime->format('H');
         $currentMinute = (int) $currentTime->format('i');
 
-        // Текущее время в минутах от начала дня
+        $cutoffHour = $this->getCutoffHour();
         $currentTimeMinutes = $currentHour * 60 + $currentMinute;
-        // Проверяем период с 16:00 (960 минут) до 23:59 (1439 минут)
-        return $currentTimeMinutes < 16 * 60 || $currentTimeMinutes > 23 * 60 + 59;
+        $cutoffMinutes = $cutoffHour * 60;
+        return $currentTimeMinutes < $cutoffMinutes || $currentTimeMinutes > 23 * 60 + 59;
     }
 
+    private function getCutoffHour(): int
+    {
+        try {
+            $settings = $this->backApi->getBotSettings();
+            $hour = (int) ($settings['cutoffHour'] ?? 16);
+            if ($hour < 0 || $hour > 23) {
+                return 16;
+            }
+            return $hour;
+        } catch (\Throwable) {
+            return 16;
+        }
+    }
 }

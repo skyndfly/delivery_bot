@@ -131,7 +131,7 @@ try {
     }
     //    }
 
-    $auth = new AuthorizeService($userRepository);
+    $auth = new AuthorizeService($userRepository, $backApi);
     if (!isset($address)) {
         $address = require_once 'data/address.php';
     }

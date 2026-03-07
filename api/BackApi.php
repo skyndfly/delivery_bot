@@ -46,6 +46,27 @@ class BackApi
     }
 
     /**
+     * @return array{cutoffHour:int}
+     */
+    public function getBotSettings(): array
+    {
+        try {
+            $response = $this->client->request('GET', "{$this->host}/bot-settings");
+            $payload = json_decode((string) $response->getBody(), true);
+            if (!is_array($payload) || !isset($payload['cutoffHour'])) {
+                throw new RuntimeException('Invalid bot-settings response');
+            }
+            return [
+                'cutoffHour' => (int) $payload['cutoffHour'],
+            ];
+        } catch (GuzzleException $e) {
+            throw new RuntimeException("BackAPI HTTP Error: {$e->getMessage()}");
+        } catch (Throwable $e) {
+            throw new RuntimeException("BackAPI Internal Error: {$e->getMessage()}");
+        }
+    }
+
+    /**
      * @throws RuntimeException
      */
     public function uploadCode(string $companyKey, string $chatId, string $filePath, ?int $addressId = null, ?string $address = null): bool
