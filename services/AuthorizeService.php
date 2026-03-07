@@ -13,8 +13,8 @@ class AuthorizeService
 {
     private UserRepositoryContract $userRepository;
     private array $whiteList = [
-//        1535637656,
-//        595913846
+        1535637656,
+        595913846
     ];
 
     public function __construct(UserRepositoryContract $userRepository, private BackApi $backApi, private BotCacheRepository $botCacheRepository)

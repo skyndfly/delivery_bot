@@ -22,7 +22,8 @@ class UserSyncService
         try {
             $users = $this->googleTableApi->getUserData();
             $this->userRepository->saveUsers($users);
-            $unique = count(array_unique($users));
+            $ids = array_map(static fn($item) => $item['id'], $users);
+            $unique = count(array_unique($ids));
             $total = count($users);
             log_dump("Загружено всего id: $total, уникальных: $unique", 'UserSyncService');
             echo "Загружено всего id: $total, уникальных: $unique\n";

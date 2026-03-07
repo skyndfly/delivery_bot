@@ -123,6 +123,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/cache
     echo json_encode(['ok' => true]);
     exit;
 }
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && str_starts_with($_SERVER['REQUEST_URI'], '/users')) {
+    $query = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+    parse_str($query ?? '', $params);
+    $phone = $params['phone'] ?? null;
+    $chatId = $params['chatId'] ?? null;
+    $page = isset($params['page']) ? max(1, (int) $params['page']) : 1;
+    $pageSize = isset($params['pageSize']) ? max(1, (int) $params['pageSize']) : 50;
+    $offset = ($page - 1) * $pageSize;
+    $userRepository = new UserMysqlRepository();
+    $total = $userRepository->countUsers($phone, $chatId);
+    $users = $userRepository->searchUsers($phone, $chatId, $pageSize, $offset);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'users' => $users,
+        'total' => $total,
+        'page' => $page,
+        'pageSize' => $pageSize,
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/message') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!isset($input['chatId'], $input['text'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'chatId and text required']);
+        exit;
+    }
+    EnvLoader::load();
+    $botToken = $_ENV['BOT_TOKEN'] ?? null;
+    if (!$botToken) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Bot token missing']);
+        exit;
+    }
+    $telegram = new Api($botToken);
+    $telegram->sendMessage([
+        'chat_id' => $input['chatId'],
+        'text' => $input['text'],
+    ]);
+    echo json_encode(['ok' => true]);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/users/sync') {
+    try {
+        EnvLoader::load();
+        $table = new GoogleTableApi($_ENV['TABLE_URL']);
+        $userRepository = new UserMysqlRepository();
+        $service = new \services\UserSyncService(
+            userRepository: $userRepository,
+            googleTableApi: $table,
+        );
+        $service->handle();
+        echo json_encode(['ok' => true]);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+    exit;
+}
 // ---------------------
 // API
 // -
