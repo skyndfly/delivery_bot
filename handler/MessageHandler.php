@@ -155,7 +155,7 @@ class MessageHandler implements HandlerInterface
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
         ];
         if (isset($proxyOptions['curl'])) {
-            $curlOptions = array_merge($curlOptions, $proxyOptions['curl']);
+            $curlOptions = array_replace($curlOptions, $proxyOptions['curl']);
         }
 
         $client = new Client([

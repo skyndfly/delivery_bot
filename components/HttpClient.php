@@ -25,7 +25,7 @@ class HttpClient implements HttpClientInterface
         ];
 
         if (isset($guzzleConfig['curl']) && is_array($guzzleConfig['curl'])) {
-            $baseConfig['curl'] = array_merge($baseConfig['curl'], $guzzleConfig['curl']);
+            $baseConfig['curl'] = array_replace($baseConfig['curl'], $guzzleConfig['curl']);
             unset($guzzleConfig['curl']);
         }
 
