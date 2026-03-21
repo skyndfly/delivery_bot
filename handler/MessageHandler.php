@@ -8,6 +8,7 @@ use api\TelegramBotApi;
 use DomainException;
 use enums\StateEnum;
 use Exception;
+use GuzzleHttp\Client;
 use repositories\StepRepository;
 use services\AuthorizeService;
 use Telegram\Bot\Objects\Update;
@@ -23,6 +24,7 @@ class MessageHandler implements HandlerInterface
         private readonly AuthorizeService $authorize,
         private string $botToken,
         private BackApi $backApi,
+        private string $telegramProxy,
     ) {
     }
 
@@ -103,8 +105,8 @@ class MessageHandler implements HandlerInterface
             }
 
             // Скачиваем файл из Telegram
-            $fileContent = file_get_contents($imageUrl);
-            if (!$fileContent) {
+            $fileContent = $this->downloadTelegramFile($imageUrl);
+            if ($fileContent === null) {
                 return false;
             }
 
@@ -141,6 +143,26 @@ class MessageHandler implements HandlerInterface
             if ($tempFile && file_exists($tempFile)) {
                 unlink($tempFile);
             }
+        }
+    }
+
+    private function downloadTelegramFile(string $imageUrl): ?string
+    {
+        $client = new Client([
+            'timeout' => 30,
+            'connect_timeout' => 10,
+            'proxy' => $this->telegramProxy,
+            'curl' => [
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+            ],
+        ]);
+
+        try {
+            $response = $client->request('GET', $imageUrl);
+            return $response->getBody()->getContents();
+        } catch (Exception $e) {
+            log_dump('Telegram download error: ' . $e->getMessage());
+            return null;
         }
     }
 

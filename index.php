@@ -9,7 +9,6 @@ use components\HttpClient;
 use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use enums\UploadedCodeStatusEnum;
-use GuzzleHttp\Client;
 use handler\CallbackQuery;
 use handler\MessageHandler;
 use repositories\BotCacheRepository;
@@ -17,10 +16,28 @@ use repositories\StepRepository;
 use repositories\UserMysqlRepository;
 use services\AuthorizeService;
 use Telegram\Bot\Api;
-use Telegram\Bot\HttpClients\GuzzleHttpClient;
 
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
+
+function getTelegramProxy(): string
+{
+    $proxy = $_ENV['TELEGRAM_PROXY'] ?? null;
+    if (!$proxy) {
+        throw new RuntimeException('TELEGRAM_PROXY not defined');
+    }
+    return $proxy;
+}
+
+function createTelegramApi(string $botToken): Api
+{
+    $proxy = getTelegramProxy();
+    $telegram = new Api($botToken);
+    $telegram->setHttpClientHandler(new HttpClient([
+        'proxy' => $proxy,
+    ]));
+    return $telegram;
+}
 
 // ---------------------
 //API
@@ -45,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
         exit;
     }
 
-    $telegram = new Api($botToken);
+    $telegram = createTelegramApi($botToken);
     $status = UploadedCodeStatusEnum::from($input['status']);
     $companyName = $input['companyName'] ?? null;
     $address = $input['address'] ?? null;
@@ -157,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/messa
         echo json_encode(['error' => 'Bot token missing']);
         exit;
     }
-    $telegram = new Api($botToken);
+    $telegram = createTelegramApi($botToken);
     $telegram->sendMessage([
         'chat_id' => $input['chatId'],
         'text' => $input['text'],
@@ -243,7 +260,7 @@ try {
     //            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
     //        ],
     //    ]);
-    $telegram = new Api($botToken);
+    $telegram = createTelegramApi($botToken);
 
     //    $telegram->setHttpClientHandler(
     //        new HttpClient()
@@ -280,13 +297,14 @@ try {
 
     $message = $update->getMessage();
     if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
-        $handle = new MessageHandler(
+            $handle = new MessageHandler(
             bot: $bot,
             redis: $redis,
             apiDisk: $apiDisk,
             authorize: $auth,
             botToken: $botToken,
             backApi: $backApi,
+            telegramProxy: getTelegramProxy(),
         );
     } elseif ($update->get('callback_query')) {
         $handle = new CallbackQuery(
