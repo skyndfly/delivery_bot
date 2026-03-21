@@ -5,6 +5,7 @@ namespace handler;
 use api\BackApi;
 use api\YandexDiskApi;
 use api\TelegramBotApi;
+use components\TelegramProxy;
 use DomainException;
 use enums\StateEnum;
 use Exception;
@@ -25,6 +26,7 @@ class MessageHandler implements HandlerInterface
         private string $botToken,
         private BackApi $backApi,
         private string $telegramProxy,
+        private ?string $telegramProxyType,
     ) {
     }
 
@@ -148,13 +150,19 @@ class MessageHandler implements HandlerInterface
 
     private function downloadTelegramFile(string $imageUrl): ?string
     {
+        $proxyOptions = TelegramProxy::buildGuzzleOptions($this->telegramProxy, $this->telegramProxyType);
+        $curlOptions = [
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+        ];
+        if (isset($proxyOptions['curl'])) {
+            $curlOptions = array_merge($curlOptions, $proxyOptions['curl']);
+        }
+
         $client = new Client([
             'timeout' => 30,
             'connect_timeout' => 10,
-            'proxy' => $this->telegramProxy,
-            'curl' => [
-                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            ],
+            'proxy' => $proxyOptions['proxy'],
+            'curl' => $curlOptions,
         ]);
 
         try {

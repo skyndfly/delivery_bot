@@ -6,6 +6,7 @@ use api\GoogleTableApi;
 use api\TelegramBotApi;
 use bootstrap\EnvLoader;
 use components\HttpClient;
+use components\TelegramProxy;
 use components\telegram\KeyBoardBuilder;
 use components\telegram\MessageSender;
 use enums\UploadedCodeStatusEnum;
@@ -29,13 +30,19 @@ function getTelegramProxy(): string
     return $proxy;
 }
 
+function getTelegramProxyType(): ?string
+{
+    $proxyType = $_ENV['TELEGRAM_PROXY_TYPE'] ?? null;
+    return $proxyType !== '' ? $proxyType : null;
+}
+
 function createTelegramApi(string $botToken): Api
 {
     $proxy = getTelegramProxy();
+    $proxyType = getTelegramProxyType();
+    $proxyOptions = TelegramProxy::buildGuzzleOptions($proxy, $proxyType);
     $telegram = new Api($botToken);
-    $telegram->setHttpClientHandler(new HttpClient([
-        'proxy' => $proxy,
-    ]));
+    $telegram->setHttpClientHandler(new HttpClient($proxyOptions));
     return $telegram;
 }
 
@@ -305,6 +312,7 @@ try {
             botToken: $botToken,
             backApi: $backApi,
             telegramProxy: getTelegramProxy(),
+            telegramProxyType: getTelegramProxyType(),
         );
     } elseif ($update->get('callback_query')) {
         $handle = new CallbackQuery(

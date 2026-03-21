@@ -16,13 +16,20 @@ class HttpClient implements HttpClientInterface
 
     public function __construct(array $guzzleConfig = [])
     {
-        $this->client = new Client(array_merge([
+        $baseConfig = [
             'timeout' => $this->timeout,
             'connect_timeout' => $this->connectTimeout,
             'curl' => [
                 CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
             ],
-        ], $guzzleConfig));
+        ];
+
+        if (isset($guzzleConfig['curl']) && is_array($guzzleConfig['curl'])) {
+            $baseConfig['curl'] = array_merge($baseConfig['curl'], $guzzleConfig['curl']);
+            unset($guzzleConfig['curl']);
+        }
+
+        $this->client = new Client(array_merge($baseConfig, $guzzleConfig));
     }
 
     /**
