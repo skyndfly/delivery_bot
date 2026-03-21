@@ -19,10 +19,12 @@ final class TelegramProxy
         }
 
         $curl = [];
-        if ($proxyType === 'socks5') {
-            $curl[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
-        } elseif ($proxyType === 'socks5h') {
-            $curl[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5_HOSTNAME;
+        if (defined('CURLOPT_PROXYTYPE')) {
+            if ($proxyType === 'socks5' && defined('CURLPROXY_SOCKS5')) {
+                $curl[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;
+            } elseif ($proxyType === 'socks5h' && defined('CURLPROXY_SOCKS5_HOSTNAME')) {
+                $curl[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5_HOSTNAME;
+            }
         }
 
         $options = [
