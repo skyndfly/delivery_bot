@@ -18,6 +18,20 @@ services:
 #    sysctls:
 #      net.ipv6.conf.all.disable_ipv6: 1
 
+  telegram-polling:
+    image: php:apache
+    build: .
+    command: composer polling
+    volumes:
+      - ./:/var/www/html
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - bot-network
+      - shared-network
+
   redis:
     image: redis:7
     restart: always

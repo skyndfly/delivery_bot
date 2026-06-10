@@ -27,9 +27,11 @@
     "predis/predis": "^3.0",
     "ext-pdo": "*",
     "symfony/cache": "^7.3",
-    "ext-curl": "*"
+    "ext-curl": "*",
+    "ext-pcntl": "*"
   },
   "scripts": {
+    "polling": "php polling.php",
     "user-update": "php console/UsersUpdateCommand.php"
   }
 }
