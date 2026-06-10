@@ -2,3 +2,4 @@
 vendor
 logs/log.txt
 .env
+.codex

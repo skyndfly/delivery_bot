@@ -1,50 +1,15 @@
 <?php
 
-use api\BackApi;
-use api\YandexDiskApi;
 use api\GoogleTableApi;
-use api\TelegramBotApi;
 use bootstrap\EnvLoader;
-use components\HttpClient;
-use components\TelegramProxy;
-use components\telegram\KeyBoardBuilder;
-use components\telegram\MessageSender;
 use enums\UploadedCodeStatusEnum;
-use handler\CallbackQuery;
-use handler\MessageHandler;
 use repositories\BotCacheRepository;
-use repositories\StepRepository;
 use repositories\UserMysqlRepository;
-use services\AuthorizeService;
-use Telegram\Bot\Api;
+use services\TelegramBotRuntimeFactory;
+use services\TelegramUpdateDispatcher;
 
 require_once "vendor/autoload.php";
 require_once 'helpers/functions.php';
-
-function getTelegramProxy(): string
-{
-    $proxy = $_ENV['TELEGRAM_PROXY'] ?? null;
-    if (!$proxy) {
-        throw new RuntimeException('TELEGRAM_PROXY not defined');
-    }
-    return $proxy;
-}
-
-function getTelegramProxyType(): ?string
-{
-    $proxyType = $_ENV['TELEGRAM_PROXY_TYPE'] ?? null;
-    return $proxyType !== '' ? $proxyType : null;
-}
-
-function createTelegramApi(string $botToken): Api
-{
-    $proxy = getTelegramProxy();
-    $proxyType = getTelegramProxyType();
-    $proxyOptions = TelegramProxy::buildGuzzleOptions($proxy, $proxyType);
-    $telegram = new Api($botToken);
-    $telegram->setHttpClientHandler(new HttpClient($proxyOptions));
-    return $telegram;
-}
 
 // ---------------------
 //API
@@ -69,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/issue
         exit;
     }
 
-    $telegram = createTelegramApi($botToken);
+    $telegram = TelegramBotRuntimeFactory::createTelegramApi($botToken);
     $status = UploadedCodeStatusEnum::from($input['status']);
     $companyName = $input['companyName'] ?? null;
     $address = $input['address'] ?? null;
@@ -181,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/messa
         echo json_encode(['error' => 'Bot token missing']);
         exit;
     }
-    $telegram = createTelegramApi($botToken);
+    $telegram = TelegramBotRuntimeFactory::createTelegramApi($botToken);
     $telegram->sendMessage([
         'chat_id' => $input['chatId'],
         'text' => $input['text'],
@@ -206,128 +171,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_SERVER['REQUEST_URI'] === '/users
     }
     exit;
 }
-// ---------------------
-// API
-// -
-
-try {
-    EnvLoader::load();
-
-    $table = new GoogleTableApi($_ENV['TABLE_URL']);
-
-    $userRepository = new UserMysqlRepository();
-    //    try {
-    //        $companyRepository = new CompanyRepository();
-    //        $getCachedCompanyService = new GetCachedCompanyService($companyRepository);
-    //        $firms = $getCachedCompanyService->execute();
-    //    } catch (Throwable) {
-    $backApi = new BackApi($_ENV['API_BACK']);
-    $botCache = new BotCacheRepository();
-    $cachedBotData = $botCache->getBotData();
-    if ($cachedBotData !== null) {
-        $firms = $cachedBotData['firms'];
-        $address = $cachedBotData['address'];
-    } else {
-        try {
-            $botData = $backApi->getBotData();
-            $firms = $botData['firms'];
-            $address = $botData['address'];
-            $botCache->setBotData($botData);
-        } catch (Throwable $e) {
-            log_dump($e->getMessage());
-            $firms = require_once 'data/firms.php';
-            $address = require_once 'data/address.php';
-            $botCache->setBotData([
-                'firms' => $firms,
-                'address' => $address,
-            ]);
-        }
+EnvLoader::load();
+if (($_ENV['ENABLE_TELEGRAM_WEBHOOK'] ?? '0') === '1') {
+    try {
+        $runtime = TelegramBotRuntimeFactory::create();
+        $update = $runtime->telegram->getWebhookUpdate();
+        (new TelegramUpdateDispatcher($runtime))->dispatch($update);
+        echo json_encode(['ok' => true]);
+    } catch (Throwable $e) {
+        log_dump(get_class($e) . ': ' . $e->getMessage(), 'LegacyWebhook');
+        http_response_code(500);
+        echo json_encode(['error' => 'telegram webhook handling failed']);
     }
-    //    }
-
-    $auth = new AuthorizeService($userRepository, $backApi, $botCache);
-    if (!isset($address)) {
-        $address = require_once 'data/address.php';
-    }
-    $images = require_once 'data/images.php';
-    $notes = require_once 'data/notes.php';
-    $telegramMessages = require_once 'messages/telegram.php';
-
-    $botToken = $_ENV['BOT_TOKEN'] ?? null;
-    $diskToken = $_ENV['DISK_TOKEN'] ?? null;
-
-    if ($botToken === null) {
-        throw new Exception('BotToken not defined');
-    }
-
-    //    $guzzle = new Client([
-    //        'timeout' => 10,
-    //        'connect_timeout' => 5,
-    //        'curl' => [
-    //            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-    //        ],
-    //    ]);
-    $telegram = createTelegramApi($botToken);
-
-    //    $telegram->setHttpClientHandler(
-    //        new HttpClient()
-    //    );
-    //    $telegram->setHttpClientHandler(
-    //        new GuzzleHttpClient($guzzle));
-    $redis = new StepRepository();
-    $keyBoardBuilder = new KeyBoardBuilder();
-    $telegramMessageSender = new MessageSender($telegram);
-    $bot = new TelegramBotApi(
-        telegram: $telegram,
-        keyboardBuilder: $keyBoardBuilder,
-        firms: $firms,
-        address: $address,
-        images: $images,
-        notes: $notes,
-        messages: $telegramMessages,
-        sender: $telegramMessageSender
-    );
-
-    $apiDisk = new YandexDiskApi($diskToken);
-    if (!isset($backApi)) {
-        $backApi = new BackApi($_ENV['API_BACK']);
-    }
-
-    $update = $telegram->getWebhookUpdate();
-    $message = $update->getMessage();
-
-    $tz = new DateTimeZone('Europe/Moscow');
-    $currentDate = new DateTimeImmutable('now', $tz);
-
-    $apiDisk->createFolder($currentDate->format('d-m-Y'));
-    $handle = null;
-
-    $message = $update->getMessage();
-    if ($message && $message->getFrom() && !$message->getFrom()->getIsBot()) {
-            $handle = new MessageHandler(
-            bot: $bot,
-            redis: $redis,
-            apiDisk: $apiDisk,
-            authorize: $auth,
-            botToken: $botToken,
-            backApi: $backApi,
-            telegramProxy: getTelegramProxy(),
-            telegramProxyType: getTelegramProxyType(),
-        );
-    } elseif ($update->get('callback_query')) {
-        $handle = new CallbackQuery(
-            bot: $bot,
-            redis: $redis,
-            apiDisk: $apiDisk,
-            currentDate: $currentDate,
-            authorize: $auth,
-            firms: $firms,
-        );
-    }
-    if ($handle === null) {
-        throw new DomainException('Handle not set');
-    }
-    $handle->handle($update);
-} catch (Exception|Error $e) {
-    log_dump($e->getMessage());
+    exit;
 }
+
+http_response_code(404);
+echo json_encode(['error' => 'Not found']);
