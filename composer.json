@@ -32,6 +32,7 @@
   },
   "scripts": {
     "polling": "php polling.php",
+    "telegram-timeout-check": "php console/TelegramTimeoutCheckCommand.php",
     "user-update": "php console/UsersUpdateCommand.php"
   }
 }

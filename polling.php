@@ -40,7 +40,7 @@ while ($running) {
                 if ($botToken === null || $botToken === '') {
                     throw new RuntimeException('BotToken not defined');
                 }
-                $telegram = TelegramBotRuntimeFactory::createTelegramApi($botToken);
+                $telegram = TelegramBotRuntimeFactory::createTelegramApi($botToken, 'polling');
             }
             if (!$webhookDeleted) {
                 $telegram->deleteWebhook();
@@ -75,11 +75,26 @@ while ($running) {
             }
         }
     } catch (Throwable $e) {
-        log_dump(get_class($e) . ': ' . $e->getMessage(), 'TelegramPolling');
+        $httpConfig = TelegramBotRuntimeFactory::getTelegramHttpClientConfig();
+        $isTimeout = str_contains($e->getMessage(), 'cURL error 28')
+            || str_contains($e->getMessage(), 'Operation timed out');
+
+        log_dump(
+            ($isTimeout ? '[WARN] Polling transport timeout: ' : '[ERROR] Polling failed: ')
+            . get_class($e) . ': ' . $e->getMessage()
+            . ' | polling_timeout=' . $timeout
+            . ', http_timeout=' . $httpConfig['timeout']
+            . ', connect_timeout=' . $httpConfig['connect_timeout'],
+            'TelegramPolling'
+        );
         $telegram = null;
         if ($running) {
             sleep($retrySleep);
-            log_dump('Polling retry after sleep: ' . $retrySleep . 's', 'TelegramPolling');
+            log_dump(
+                '[INFO] Polling retry after sleep: ' . $retrySleep . 's'
+                . ', proxy_type=' . (TelegramBotRuntimeFactory::getTelegramProxyType() ?? 'default'),
+                'TelegramPolling'
+            );
         }
     }
 }

@@ -19,6 +19,11 @@ use Throwable;
 
 final class TelegramBotRuntimeFactory
 {
+    private const DEFAULT_POLLING_TIMEOUT = 50;
+    private const DEFAULT_HTTP_TIMEOUT = 30;
+    private const DEFAULT_HTTP_CONNECT_TIMEOUT = 10;
+    private const HTTP_TIMEOUT_SAFETY_MARGIN = 5;
+
     public static function create(): TelegramBotRuntime
     {
         EnvLoader::load();
@@ -58,7 +63,7 @@ final class TelegramBotRuntimeFactory
             throw new Exception('DiskToken not defined');
         }
 
-        $telegram = self::createTelegramApi($botToken);
+        $telegram = self::createTelegramApi($botToken, 'runtime');
         $redis = new StepRepository();
         $messages = require __DIR__ . '/../messages/telegram.php';
         $images = require __DIR__ . '/../data/images.php';
@@ -90,12 +95,62 @@ final class TelegramBotRuntimeFactory
         );
     }
 
-    public static function createTelegramApi(string $botToken): Api
+    public static function createTelegramApi(string $botToken, string $context = 'short-request'): Api
     {
-        $proxyOptions = TelegramProxy::buildGuzzleOptions(self::getTelegramProxy(), self::getTelegramProxyType());
+        $proxyType = self::getTelegramProxyType();
+        $proxyOptions = TelegramProxy::buildGuzzleOptions(self::getTelegramProxy(), $proxyType);
+        $httpConfig = self::getTelegramHttpClientConfig();
+
+        log_dump(
+            '[INFO] Telegram API HTTP config: context=' . $context
+            . ', timeout=' . $httpConfig['timeout']
+            . ', connect_timeout=' . $httpConfig['connect_timeout']
+            . ', polling_timeout=' . $httpConfig['polling_timeout']
+            . ', proxy_type=' . ($proxyType ?? 'default'),
+            'TelegramBotRuntimeFactory'
+        );
+
         $telegram = new Api($botToken);
-        $telegram->setHttpClientHandler(new HttpClient($proxyOptions));
+        $telegram->setHttpClientHandler(new HttpClient(
+            guzzleConfig: $proxyOptions,
+            timeout: $httpConfig['timeout'],
+            connectTimeout: $httpConfig['connect_timeout'],
+            context: $context
+        ));
         return $telegram;
+    }
+
+    public static function getTelegramHttpClientConfig(): array
+    {
+        $pollingTimeout = self::envPositiveInt('TELEGRAM_POLLING_TIMEOUT', self::DEFAULT_POLLING_TIMEOUT);
+        $minimumHttpTimeout = $pollingTimeout + self::HTTP_TIMEOUT_SAFETY_MARGIN;
+        $defaultHttpTimeout = max(self::DEFAULT_HTTP_TIMEOUT, $minimumHttpTimeout);
+        $configuredHttpTimeout = self::envOptionalPositiveInt('TELEGRAM_HTTP_TIMEOUT');
+        $httpTimeout = $configuredHttpTimeout ?? $defaultHttpTimeout;
+        $httpTimeoutAdjusted = false;
+        $connectTimeout = self::envPositiveInt(
+            'TELEGRAM_HTTP_CONNECT_TIMEOUT',
+            self::DEFAULT_HTTP_CONNECT_TIMEOUT
+        );
+
+        if ($httpTimeout <= $pollingTimeout) {
+            $httpTimeoutAdjusted = true;
+            log_dump(
+                '[WARN] TELEGRAM_HTTP_TIMEOUT=' . $httpTimeout
+                . ' is not greater than TELEGRAM_POLLING_TIMEOUT=' . $pollingTimeout
+                . '; using ' . $minimumHttpTimeout,
+                'TelegramBotRuntimeFactory'
+            );
+            $httpTimeout = $minimumHttpTimeout;
+        }
+
+        return [
+            'timeout' => $httpTimeout,
+            'connect_timeout' => $connectTimeout,
+            'polling_timeout' => $pollingTimeout,
+            'configured_timeout' => $configuredHttpTimeout,
+            'timeout_adjusted' => $httpTimeoutAdjusted,
+        ];
     }
 
     public static function getTelegramProxy(): string
@@ -111,5 +166,43 @@ final class TelegramBotRuntimeFactory
     {
         $proxyType = $_ENV['TELEGRAM_PROXY_TYPE'] ?? null;
         return $proxyType !== '' ? $proxyType : null;
+    }
+
+    private static function envPositiveInt(string $name, int $default): int
+    {
+        $value = $_ENV[$name] ?? null;
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        $parsed = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($parsed === false) {
+            log_dump(
+                '[WARN] Invalid ' . $name . '=' . $value . '; using ' . $default,
+                'TelegramBotRuntimeFactory'
+            );
+            return $default;
+        }
+
+        return (int) $parsed;
+    }
+
+    private static function envOptionalPositiveInt(string $name): ?int
+    {
+        $value = $_ENV[$name] ?? null;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $parsed = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($parsed === false) {
+            log_dump(
+                '[WARN] Invalid ' . $name . '=' . $value . '; using calculated default',
+                'TelegramBotRuntimeFactory'
+            );
+            return null;
+        }
+
+        return (int) $parsed;
     }
 }

@@ -11,11 +11,30 @@ use Telegram\Bot\HttpClients\HttpClientInterface;
 class HttpClient implements HttpClientInterface
 {
     private Client $client;
-    private int $timeout = 30;         // сек
-    private int $connectTimeout = 10;   // сек
+    private int $timeout;
+    private int $connectTimeout;
+    private string $context;
 
-    public function __construct(array $guzzleConfig = [])
-    {
+    public function __construct(
+        array $guzzleConfig = [],
+        int $timeout = 30,
+        int $connectTimeout = 10,
+        string $context = 'telegram'
+    ) {
+        $this->timeout = max(1, $timeout);
+        $this->connectTimeout = max(1, $connectTimeout);
+        $this->context = $context;
+
+        // Guzzle timeout must be greater than Telegram getUpdates long-poll timeout.
+        // Short sendMessage/sendPhoto requests can work through the same proxy while
+        // getUpdates fails if this transport timeout is too small.
+        log_dump(
+            '[INFO] HttpClient init: context=' . $this->context
+            . ', timeout=' . $this->timeout
+            . ', connect_timeout=' . $this->connectTimeout,
+            'HttpClient'
+        );
+
         $baseConfig = [
             'timeout' => $this->timeout,
             'connect_timeout' => $this->connectTimeout,
@@ -55,14 +74,19 @@ class HttpClient implements HttpClientInterface
 
             return $this->client->request($method, $url, $guzzleOptions);
         } catch (GuzzleException $e) {
-            // логируем ошибку
-            log_dump('HttpClient send error: ' . $e->getMessage());
+            log_dump(
+                '[ERROR] HttpClient send error: context=' . $this->context
+                . ', timeout=' . $this->timeout
+                . ', connect_timeout=' . $this->connectTimeout
+                . ', error=' . self::sanitizeErrorMessage($e->getMessage()),
+                'HttpClient'
+            );
 
             // создаём фиктивный ответ, чтобы SDK не падал
             return new Response(500, [], json_encode([
                 'ok' => false,
                 'error_code' => 500,
-                'description' => $e->getMessage()
+                'description' => self::sanitizeErrorMessage($e->getMessage())
             ]));
         }
     }
@@ -87,5 +111,14 @@ class HttpClient implements HttpClientInterface
     {
         $this->connectTimeout = $connectTimeOut;
         return $this;
+    }
+
+    private static function sanitizeErrorMessage(string $message): string
+    {
+        return preg_replace(
+            '#https://api\.telegram\.org/bot[^/\s]+/#',
+            'https://api.telegram.org/bot<redacted>/',
+            $message
+        ) ?? $message;
     }
 }
